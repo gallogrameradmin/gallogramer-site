@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "./components/Header";
-import HeroDevPanel from "./components/HeroDevPanel";
 import FilmGrain from "./components/FilmGrain";
 import AmbientLine from "./components/AmbientLine";
-import DebugGyro from "./components/DebugGyro";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -61,8 +59,6 @@ export default function RootLayout({
         <FilmGrain />
         <Header />
         {children}
-        <HeroDevPanel />
-        <DebugGyro />
       </body>
     </html>
   );

@@ -87,9 +87,8 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
 
   // ─── Параллакс от наклона телефона (DeviceOrientation API) ───
   // На coarse pointer (touch) рулим теми же mx/my, что и мышь.
-  // Слушатель вешаем безусловно: на iOS события начнут приходить
-  // после того, как пользователь даст разрешение (это делает кнопка
-  // "Tap to allow motion" в DebugGyro оверлее, либо мы добавим UI позже).
+  // На iOS Safari нужно явное разрешение через user-gesture — запрашиваем
+  // на первом touchstart по документу.
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -97,6 +96,7 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
 
     let baseGamma: number | null = null;
     let baseBeta: number | null = null;
+    let attached = false;
 
     const onOrient = (e: DeviceOrientationEvent) => {
       const g = e.gamma ?? 0; // лево/право: -90..90
@@ -113,8 +113,40 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
       my.set(dy);
     };
 
-    window.addEventListener("deviceorientation", onOrient);
-    return () => window.removeEventListener("deviceorientation", onOrient);
+    const attach = () => {
+      if (attached) return;
+      window.addEventListener("deviceorientation", onOrient);
+      attached = true;
+    };
+    const detach = () => {
+      if (!attached) return;
+      window.removeEventListener("deviceorientation", onOrient);
+      attached = false;
+    };
+
+    const DOE = window.DeviceOrientationEvent as unknown as
+      | { requestPermission?: () => Promise<"granted" | "denied"> }
+      | undefined;
+
+    if (DOE && typeof DOE.requestPermission === "function") {
+      // iOS 13+ — запрашиваем permission при первом touch
+      const onFirstTouch = () => {
+        DOE.requestPermission!()
+          .then((res) => {
+            if (res === "granted") attach();
+          })
+          .catch(() => {});
+      };
+      document.addEventListener("touchstart", onFirstTouch, { once: true });
+      return () => {
+        document.removeEventListener("touchstart", onFirstTouch);
+        detach();
+      };
+    }
+
+    // Android и прочие — слушаем сразу
+    attach();
+    return detach;
   }, [mx, my]);
 
   return (
