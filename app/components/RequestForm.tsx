@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FillSubmit } from "./FillButton";
 import ButtonAura from "./ButtonAura";
+import DecorField from "./DecorField";
+import EdgeMarks from "./EdgeMarks";
 
 type Method = "telegram" | "email" | "phone" | "whatsapp";
 type State = "idle" | "sending" | "ok" | "error";
@@ -122,16 +124,27 @@ export default function RequestForm() {
     ) : null;
 
   return (
-    <section className="relative px-6 md:px-12 pt-32 md:pt-40 pb-24 md:pb-32">
-      <div className="max-w-[1100px] mx-auto">
+    <section className="relative overflow-hidden px-6 md:px-12 pt-32 md:pt-40 pb-24 md:pb-32">
+      {/* Декоративный фон */}
+      <DecorField count={16} maxOpacity={0.12} />
+      <EdgeMarks code="PAGE / R" label="REQUEST" />
+
+      <div className="relative max-w-[1100px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease }}
           className="mb-12 md:mb-20"
         >
-          <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-4">
-            <span className="text-accent">/Request</span> · Brief
+          <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-4 inline-flex items-center gap-2">
+            <span className="text-accent">/Request</span>
+            <span aria-hidden className="inline-block">
+              <svg width="8" height="8" viewBox="0 0 10 10">
+                <line x1="0.5" y1="0.5" x2="9.5" y2="9.5" stroke="currentColor" strokeWidth="1.6" className="text-accent" />
+                <line x1="9.5" y1="0.5" x2="0.5" y2="9.5" stroke="currentColor" strokeWidth="1.6" className="text-accent" />
+              </svg>
+            </span>
+            <span>· Brief</span>
           </p>
           <h1 className="font-display font-medium tracking-[-0.04em] text-[clamp(2.5rem,8vw,7rem)] leading-[0.9]">
             Заявка<span className="text-accent">.</span>

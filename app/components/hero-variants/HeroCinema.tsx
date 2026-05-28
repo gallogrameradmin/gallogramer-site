@@ -267,9 +267,15 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, ease, delay: 0.1 }}
-            className="text-xs md:text-sm tracking-[0.2em] uppercase font-mono text-fg-faint mb-6 md:mb-8"
+            className="text-xs md:text-sm tracking-[0.2em] uppercase font-mono text-fg-faint mb-6 md:mb-8 inline-flex items-center gap-2"
           >
-            <span className="text-accent">001</span> / Cinema · Photo · Video
+            <span className="text-accent">001</span>
+            <span aria-hidden className="inline-block">
+              <svg width="9" height="9" viewBox="0 0 10 10">
+                <polygon points="5,1 9,5 5,9 1,5" className="fill-accent" />
+              </svg>
+            </span>
+            <span>/ Cinema · Photo · Video</span>
           </motion.p>
         </div>
 

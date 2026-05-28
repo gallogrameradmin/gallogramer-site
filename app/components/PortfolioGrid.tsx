@@ -8,6 +8,8 @@ import { videos } from "@/app/data/videos";
 import Lightbox, { type LightboxItem } from "./Lightbox";
 import CornerBrackets from "./CornerBrackets";
 import ButtonAura from "./ButtonAura";
+import DecorField from "./DecorField";
+import EdgeMarks from "./EdgeMarks";
 
 type Tab = "all" | "photo" | "video";
 
@@ -43,12 +45,22 @@ export default function PortfolioGrid() {
   const isVideoEmpty = tab === "video" && videos.length === 0;
 
   return (
-    <section className="relative px-4 md:px-8 lg:px-12 pt-32 md:pt-40 pb-24 md:pb-32">
-      <div className="max-w-[1600px] mx-auto">
+    <section className="relative overflow-hidden px-4 md:px-8 lg:px-12 pt-32 md:pt-40 pb-24 md:pb-32">
+      {/* Декоративный фон */}
+      <DecorField count={20} maxOpacity={0.12} />
+      <EdgeMarks code="PAGE / P" label="PORTFOLIO" />
+
+      <div className="relative max-w-[1600px] mx-auto">
         <div className="mb-12 md:mb-20 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>
-            <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-4">
+            <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-4 inline-flex items-center gap-2">
               <span className="text-accent">/Portfolio</span>
+              <span aria-hidden className="inline-block">
+                <svg width="8" height="8" viewBox="0 0 10 10">
+                  <line x1="0.5" y1="5" x2="9.5" y2="5" stroke="currentColor" strokeWidth="1.6" className="text-accent" />
+                  <line x1="5" y1="0.5" x2="5" y2="9.5" stroke="currentColor" strokeWidth="1.6" className="text-accent" />
+                </svg>
+              </span>
             </p>
             <h1 className="font-display font-medium tracking-[-0.04em] text-[clamp(2.5rem,8vw,7rem)] leading-[0.9]">
               Портфолио<span className="text-accent">.</span>

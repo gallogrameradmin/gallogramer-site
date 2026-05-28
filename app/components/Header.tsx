@@ -8,14 +8,15 @@ import ThemeToggle from "./ThemeToggle";
 // Привязка секций главной к пунктам навигации
 const SECTION_TO_LINK: Record<string, string> = {
   hero: "/",
+  services: "/#services",
   works: "/portfolio",
   contact: "/request",
 };
 
 const links = [
   { href: "/", label: "Home" },
+  { href: "/#services", label: "Услуги" },
   { href: "/portfolio", label: "Portfolio" },
-  { href: "/services", label: "Услуги" },
   { href: "/request", label: "Заявка" },
 ];
 
@@ -41,38 +42,52 @@ export default function Header() {
   const pathname = usePathname();
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
-  // Scroll-spy на главной — отслеживает какая секция в зоне видимости.
+  // Scroll-spy на главной — какая секция сейчас под "линией внимания"
+  // (30% от верха viewport). Работает надёжнее IntersectionObserver: ему
+  // мешали разные высоты секций — высокие проигрывали коротким по ratio.
   useEffect(() => {
     if (pathname !== "/") {
       setActiveSection(null);
       return;
     }
     const ids = Object.keys(SECTION_TO_LINK);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Выбираем секцию с наибольшим intersection ratio из видимых
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible[0]) {
-          setActiveSection(visible[0].target.id);
+
+    const update = () => {
+      let found: string | null = null;
+
+      // Edge-case: докрутили до самого низа страницы → последняя секция
+      // (когда последняя секция короче 70vh и линия до неё не дотянется).
+      const scrollMax =
+        document.documentElement.scrollHeight - window.innerHeight;
+      if (window.scrollY >= scrollMax - 40) {
+        found = ids[ids.length - 1] ?? null;
+      } else {
+        const probeY = window.innerHeight * 0.3;
+        // Идём в обратном порядке: если несколько секций пересекают линию
+        // на границе — побеждает та, что ниже (только что вошла в кадр).
+        for (let i = ids.length - 1; i >= 0; i--) {
+          const id = ids[i];
+          const el = document.getElementById(id);
+          if (!el) continue;
+          const r = el.getBoundingClientRect();
+          if (r.top <= probeY && r.bottom >= probeY) {
+            found = id;
+            break;
+          }
         }
-      },
-      {
-        // Зона срабатывания — средняя треть экрана
-        rootMargin: "-30% 0px -45% 0px",
-        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
-      },
-    );
-    const elements: Element[] = [];
-    for (const id of ids) {
-      const el = document.getElementById(id);
-      if (el) {
-        observer.observe(el);
-        elements.push(el);
       }
-    }
-    return () => observer.disconnect();
+      // Если ни одна секция не на линии — оставляем последнее значение,
+      // не сбрасываем в null (иначе мигает Home).
+      if (found) setActiveSection(found);
+    };
+
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, [pathname]);
 
   return (
@@ -130,7 +145,7 @@ export default function Header() {
               {isActive && (
                 <span
                   aria-hidden
-                  className="absolute -bottom-1 left-0 right-4 h-[1px] bg-accent"
+                  className="absolute -bottom-1 left-0 right-4 h-[2px] bg-accent"
                 />
               )}
             </Link>

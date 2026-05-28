@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { FillLink } from "./FillButton";
 import ButtonAura from "./ButtonAura";
+import DecorField from "./DecorField";
+import EdgeMarks from "./EdgeMarks";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -10,9 +12,13 @@ export default function Footer() {
   return (
     <footer
       id="contact"
-      className="relative px-6 md:px-12 pt-20 md:pt-32 pb-10 md:pb-12 border-t border-line"
+      className="relative overflow-hidden px-6 md:px-12 pt-20 md:pt-32 pb-10 md:pb-12 border-t border-line"
     >
-      <div className="max-w-[1400px] mx-auto">
+      {/* Декоративный фон */}
+      <DecorField count={18} maxOpacity={0.15} />
+      <EdgeMarks code="004 / C" label="CONTACT" />
+
+      <div className="relative max-w-[1400px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -21,8 +27,14 @@ export default function Footer() {
           className="mb-16 md:mb-24 grid lg:grid-cols-12 gap-10 lg:gap-12 items-end"
         >
           <div className="lg:col-span-6">
-            <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-6">
-              <span className="text-accent">003</span> / Contact
+            <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-6 inline-flex items-center gap-2">
+              <span className="text-accent">004</span>
+              <span aria-hidden className="inline-block">
+                <svg width="8" height="8" viewBox="0 0 10 10">
+                  <rect x="1.2" y="1.2" width="7.6" height="7.6" className="fill-accent" />
+                </svg>
+              </span>
+              <span>/ Contact</span>
             </p>
             <p className="font-display font-medium tracking-[-0.03em] text-[clamp(2rem,7vw,6rem)] leading-[0.95]">
               Связаться<span className="text-accent">.</span>

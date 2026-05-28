@@ -19,7 +19,7 @@ function FillEffect() {
   return (
     <span
       aria-hidden
-      className="absolute aspect-square w-0 group-hover:w-[260%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent transition-[width] duration-[2400ms] ease-[cubic-bezier(0.22,1,0.36,1)] pointer-events-none"
+      className="absolute aspect-square w-0 group-hover:w-[260%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/75 backdrop-blur-sm transition-[width] duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] pointer-events-none"
       style={{ top: "var(--oy, 50%)", left: "var(--ox, 50%)" }}
     />
   );

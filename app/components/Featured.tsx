@@ -5,16 +5,25 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { photos } from "@/app/data/photos";
 import CornerBrackets from "./CornerBrackets";
+import DecorField from "./DecorField";
+import EdgeMarks from "./EdgeMarks";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-// 6 hand-picked indices spread across the archive
-const picks = [0, 7, 18, 28, 42, 60].map((i) => photos[i % photos.length]);
+// 5 hand-picked indices spread across the archive
+const picks = [0, 14, 28, 42, 60].map((i) => photos[i % photos.length]);
 
 export default function Featured() {
   return (
-    <section id="works" className="relative px-6 md:px-12 py-24 md:py-40">
-      <div className="max-w-[1400px] mx-auto">
+    <section
+      id="works"
+      className="relative overflow-hidden px-6 md:px-12 py-24 md:py-40"
+    >
+      {/* Декоративный фон */}
+      <DecorField count={14} maxOpacity={0.12} />
+      <EdgeMarks code="003 / B" label="WORKS" />
+
+      <div className="relative max-w-[1400px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -23,8 +32,14 @@ export default function Featured() {
           className="flex items-end justify-between mb-10 md:mb-16"
         >
           <div>
-            <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-4">
-              <span className="text-accent">002</span> / Works
+            <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-4 inline-flex items-center gap-2">
+              <span className="text-accent">003</span>
+              <span aria-hidden className="inline-block">
+                <svg width="8" height="8" viewBox="0 0 10 10">
+                  <circle cx="5" cy="5" r="3.8" className="fill-accent" />
+                </svg>
+              </span>
+              <span>/ Works</span>
             </p>
             <h2 className="font-display font-medium tracking-[-0.03em] text-[clamp(2rem,5vw,4rem)] leading-[0.95]">
               Работы<span className="text-accent">.</span>
@@ -44,7 +59,7 @@ export default function Featured() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-5 gap-2 md:gap-3">
           {picks.map((p, i) => (
             <motion.div
               key={p.src}
@@ -52,13 +67,13 @@ export default function Featured() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.8, ease, delay: i * 0.07 }}
-              className="relative overflow-hidden bg-bg-soft aspect-[4/5] group"
+              className="relative overflow-hidden bg-bg-soft aspect-[3/4] group"
             >
               <Image
                 src={p.src}
                 alt=""
                 fill
-                sizes="(min-width: 1024px) 33vw, (min-width: 768px) 33vw, 50vw"
+                sizes="(min-width: 1024px) 20vw, (min-width: 768px) 20vw, 20vw"
                 className="object-cover transition-transform duration-[800ms] ease-out group-hover:scale-[1.04]"
                 priority={i < 3}
               />
