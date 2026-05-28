@@ -165,6 +165,38 @@
   }
 }
 
+/* ─── TABLET WIDE HERO LAYOUT (1024-1279px) ─── */
+/* Подобрано Славой через HeroDevPanel на широком планшете / ноуте. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  :root {
+    --body-right: -14vw;
+    --body-bottom: 19.5vh;
+    --body-height: 157vh;
+    --hand-right: 5%;
+    --hand-bottom: 3%;
+    --hand-width: 89%;
+    --cam-right: 13.5%;
+    --cam-bottom: 10.5%;
+    --cam-width: 45%;
+    --aura-right: -36vw;
+    --aura-bottom: -6vh;
+    --aura-size: 90vh;
+    --aura-opacity: 0.54;
+    --vignette-opacity: 0.6;
+    --tint-opacity: 0.2;
+    --caption-x: 0px;
+    --caption-y: -50px;
+    --caption-scale: 1;
+    --name-x: 0px;
+    --name-y: -64px;
+    --name-scale: 1;
+    --bio-x: 0px;
+    --bio-y: 8px;
+    --bio-scale: 1.2;
+    --bio-max-w: 100vw;
+  }
+}
+
 /* ─── DESKTOP HERO LAYOUT (≥ 1280px) ─── */
 /* Подобрано Славой через HeroDevPanel на десктопе. */
 @media (min-width: 1280px) {
