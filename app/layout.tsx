@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import HeroDevPanel from "./components/HeroDevPanel";
 import FilmGrain from "./components/FilmGrain";
 import AmbientLine from "./components/AmbientLine";
+import DebugGyro from "./components/DebugGyro";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -61,6 +62,7 @@ export default function RootLayout({
         <Header />
         {children}
         <HeroDevPanel />
+        <DebugGyro />
       </body>
     </html>
   );
