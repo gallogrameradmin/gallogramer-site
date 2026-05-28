@@ -115,19 +115,15 @@ export default function Lightbox({
             className="absolute inset-0 flex items-center justify-center p-12 md:p-16"
           >
             {item.kind === "photo" ? (
-              <div
-                className="relative max-w-full max-h-full"
-                style={{ aspectRatio: `${item.w} / ${item.h}` }}
-              >
-                <Image
-                  src={item.src}
-                  alt=""
-                  fill
-                  sizes="100vw"
-                  priority
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src={item.src}
+                alt=""
+                width={item.w}
+                height={item.h}
+                sizes="(min-width: 1024px) 90vw, 100vw"
+                priority
+                className="w-auto h-auto max-w-[92vw] max-h-[85vh] object-contain"
+              />
             ) : (
               <video
                 src={item.src}
