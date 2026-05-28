@@ -16,6 +16,38 @@ function apiBase(): string {
   return "";
 }
 
+/**
+ * Browser file.type иногда пустой или octet-stream (особенно из iOS Photos).
+ * Доочинаем MIME по расширению — иначе S3 хранит видео как octet-stream
+ * и стриминг ломается.
+ */
+function inferContentType(file: File): string {
+  const t = file.type?.toLowerCase() ?? "";
+  if (t && t !== "application/octet-stream") return t;
+  const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "avif":
+      return "image/avif";
+    case "mp4":
+      return "video/mp4";
+    case "mov":
+      return "video/quicktime";
+    case "webm":
+      return "video/webm";
+    case "m4v":
+      return "video/x-m4v";
+    default:
+      return "application/octet-stream";
+  }
+}
+
 type MediaItem = {
   kind: "photo" | "video";
   key: string;
@@ -157,6 +189,7 @@ function AuthedAdmin({
 
   const uploadOne = async (file: File, kind: "photo" | "video") => {
     const filename = file.name;
+    const contentType = inferContentType(file);
     setUploads((prev) => [
       ...prev,
       { filename, kind, progress: 0, done: false },
@@ -171,7 +204,7 @@ function AuthedAdmin({
         },
         body: JSON.stringify({
           kind,
-          contentType: file.type,
+          contentType,
           originalName: file.name,
         }),
       });
@@ -188,7 +221,7 @@ function AuthedAdmin({
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", url);
-        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.setRequestHeader("Content-Type", contentType);
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             updateUpload(filename, { progress: e.loaded / e.total });

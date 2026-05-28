@@ -31,6 +31,21 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Принудительный Cache-Control: иначе Vercel ставит max-age=0 для всего что
+  // прошло через rewrite, и кэширование на CDN/в браузере не работает.
+  async headers() {
+    return [
+      {
+        source: "/media/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
