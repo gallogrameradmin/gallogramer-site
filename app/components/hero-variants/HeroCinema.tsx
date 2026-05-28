@@ -149,96 +149,107 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
             />
           </motion.div>
 
-          {/* ─── СЛОЙ 1: ТЕЛО ─── */}
-          <motion.div
+          {/*
+            ─── КОМПОЗИЦИЯ: body + hand + camera в одном якоре ───
+            Контейнер позиционирован к viewport (body-right/bottom/height).
+            Body заполняет его 100%. Hand и Camera позиционируются ВНУТРИ него
+            процентами — поэтому при любом разрешении экрана композиция
+            не расползается: всё едет вместе с body.
+            Mouse-параллакс остаётся независимым для каждого слоя.
+          */}
+          <div
             style={{
-              y: bodyScrollY,
-              x: bodyX,
               right: "var(--body-right, 2.5vw)",
               bottom: "var(--body-bottom, 9vh)",
               height: "var(--body-height, 177vh)",
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.1, ease, delay: 0.35 }}
-            className="absolute z-10 aspect-[2/3] pointer-events-none will-change-transform text-fg"
+            className="absolute z-10 aspect-[2/3] pointer-events-none"
             aria-hidden
           >
-            <Image
-              src={reachBody}
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 1024px) 60vw, 80vw"
-              className="object-contain object-bottom"
-              style={{ filter: "contrast(1.05) saturate(0.85) brightness(0.95)" }}
-            />
-          </motion.div>
-
-          {/* ─── СЛОЙ 2: РУКА (если есть файл) ─── */}
-          {hand ? (
+            {/* ─── СЛОЙ 1: ТЕЛО (fill контейнера) ─── */}
             <motion.div
-              style={{
-                x: handX,
-                y: handY,
-                right: "var(--hand-right, 4vw)",
-                bottom: "var(--hand-bottom, 11vh)",
-                width: "var(--hand-width, 56vw)",
-                aspectRatio: "3 / 2",
-              }}
+              style={{ y: bodyScrollY, x: bodyX }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1, ease, delay: 0.5 }}
-              className="absolute z-[15] pointer-events-none will-change-transform text-fg"
-              aria-hidden
-            >
-              {hand.endsWith(".svg") ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={hand}
-                  alt=""
-                  className="w-full h-full object-contain object-bottom"
-                />
-              ) : (
-                <Image
-                  src={hand}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(min-width: 1024px) 30vw, 50vw"
-                  className="object-contain object-bottom"
-                />
-              )}
-            </motion.div>
-          ) : null}
-
-          {/* ─── СЛОЙ 3: КАМЕРА ─── */}
-          {camera ? (
-            <motion.div
-              style={{
-                x: camX,
-                y: camY,
-                right: "var(--cam-right, 10vw)",
-                bottom: "var(--cam-bottom, 28.5vh)",
-                width: "var(--cam-width, 29.5vw)",
-                aspectRatio: "10 / 7",
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.9, ease, delay: 0.6 }}
-              className="absolute z-20 pointer-events-none will-change-transform text-fg"
-              aria-hidden
+              transition={{ duration: 1.1, ease, delay: 0.35 }}
+              className="absolute inset-0 will-change-transform text-fg"
             >
               <Image
-                src={camera}
+                src={reachBody}
                 alt=""
                 fill
                 priority
-                sizes="(min-width: 768px) 18vw, 25vw"
-                className="object-contain"
+                sizes="(min-width: 1024px) 60vw, 80vw"
+                className="object-contain object-bottom"
+                style={{
+                  filter: "contrast(1.05) saturate(0.85) brightness(0.95)",
+                }}
               />
             </motion.div>
-          ) : null}
+
+            {/* ─── СЛОЙ 2: РУКА (позиция в % от body) ─── */}
+            {hand ? (
+              <motion.div
+                style={{
+                  x: handX,
+                  y: handY,
+                  right: "var(--hand-right, 5%)",
+                  bottom: "var(--hand-bottom, 10%)",
+                  width: "var(--hand-width, 80%)",
+                  aspectRatio: "3 / 2",
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, ease, delay: 0.5 }}
+                className="absolute z-[15] will-change-transform text-fg"
+              >
+                {hand.endsWith(".svg") ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={hand}
+                    alt=""
+                    className="w-full h-full object-contain object-bottom"
+                  />
+                ) : (
+                  <Image
+                    src={hand}
+                    alt=""
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 30vw, 50vw"
+                    className="object-contain object-bottom"
+                  />
+                )}
+              </motion.div>
+            ) : null}
+
+            {/* ─── СЛОЙ 3: КАМЕРА (позиция в % от body) ─── */}
+            {camera ? (
+              <motion.div
+                style={{
+                  x: camX,
+                  y: camY,
+                  right: "var(--cam-right, 18%)",
+                  bottom: "var(--cam-bottom, 35%)",
+                  width: "var(--cam-width, 45%)",
+                  aspectRatio: "10 / 7",
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.9, ease, delay: 0.6 }}
+                className="absolute z-20 will-change-transform text-fg"
+              >
+                <Image
+                  src={camera}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 18vw, 25vw"
+                  className="object-contain"
+                />
+              </motion.div>
+            ) : null}
+          </div>
         </>
       ) : null}
 

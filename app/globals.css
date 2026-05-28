@@ -134,18 +134,19 @@
 }
 
 /* ─── MOBILE HERO LAYOUT (под ≤ 767px) ─── */
-/* Подобрано Славой через HeroDevPanel на мобильном viewport. */
+/* Body — позиция/размер к viewport. Hand и Camera — % от body. */
 @media (max-width: 767px) {
   :root {
     --body-right: -28.5vw;
     --body-bottom: 11vh;
     --body-height: 118vh;
-    --hand-right: -26.5vw;
-    --hand-bottom: 16vh;
-    --hand-width: 160vw;
-    --cam-right: -13.5vw;
-    --cam-bottom: 25.5vh;
-    --cam-width: 89vw;
+    /* Hand / Camera теперь в % от body wrapper — композиция не расползается */
+    --hand-right: 3%;
+    --hand-bottom: 8%;
+    --hand-width: 95%;
+    --cam-right: 25%;
+    --cam-bottom: 32%;
+    --cam-width: 55%;
     --aura-right: -20vw;
     --aura-bottom: -15vh;
     --aura-size: 90vh;

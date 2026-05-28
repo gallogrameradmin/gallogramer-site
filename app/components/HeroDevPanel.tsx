@@ -13,18 +13,18 @@ type Knob = {
 };
 
 const KNOBS: Knob[] = [
-  // ─── ТЕЛО ───
+  // ─── ТЕЛО — позиция к viewport ───
   { key: "body-right", label: "Body · right", min: -50, max: 60, step: 0.5, suffix: "vw", default: -8 },
   { key: "body-bottom", label: "Body · bottom", min: -80, max: 100, step: 0.5, suffix: "vh", default: 0 },
   { key: "body-height", label: "Body · height", min: 20, max: 280, step: 1, suffix: "vh", default: 70 },
-  // ─── РУКА ───
-  { key: "hand-right", label: "Hand · right", min: -50, max: 80, step: 0.5, suffix: "vw", default: -10 },
-  { key: "hand-bottom", label: "Hand · bottom", min: -50, max: 100, step: 0.5, suffix: "vh", default: 6 },
-  { key: "hand-width", label: "Hand · width", min: 10, max: 160, step: 0.5, suffix: "vw", default: 95 },
-  // ─── КАМЕРА ───
-  { key: "cam-right", label: "Camera · right", min: -30, max: 100, step: 0.5, suffix: "vw", default: 8 },
-  { key: "cam-bottom", label: "Camera · bottom", min: -30, max: 100, step: 0.5, suffix: "vh", default: 20 },
-  { key: "cam-width", label: "Camera · width", min: 5, max: 100, step: 0.5, suffix: "vw", default: 40 },
+  // ─── РУКА — позиция в % от body ───
+  { key: "hand-right", label: "Hand · right (% body)", min: -50, max: 100, step: 0.5, suffix: "%", default: 5 },
+  { key: "hand-bottom", label: "Hand · bottom (% body)", min: -50, max: 100, step: 0.5, suffix: "%", default: 10 },
+  { key: "hand-width", label: "Hand · width (% body)", min: 10, max: 200, step: 0.5, suffix: "%", default: 80 },
+  // ─── КАМЕРА — позиция в % от body ───
+  { key: "cam-right", label: "Camera · right (% body)", min: -50, max: 100, step: 0.5, suffix: "%", default: 18 },
+  { key: "cam-bottom", label: "Camera · bottom (% body)", min: -50, max: 100, step: 0.5, suffix: "%", default: 35 },
+  { key: "cam-width", label: "Camera · width (% body)", min: 5, max: 150, step: 0.5, suffix: "%", default: 45 },
   // ─── АУРА ───
   { key: "aura-right", label: "Aura · right", min: -80, max: 80, step: 0.5, suffix: "vw", default: -20 },
   { key: "aura-bottom", label: "Aura · bottom", min: -80, max: 80, step: 0.5, suffix: "vh", default: -15 },
