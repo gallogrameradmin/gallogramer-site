@@ -125,6 +125,9 @@ export default function HeroDevPanel() {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<Mode | null>(null);
   const [exported, setExported] = useState<string | null>(null);
+  // Когда true — изменение body-* двигает hand-* и cam-* на ту же дельту,
+  // body-height масштабирует hand-width и cam-width пропорционально.
+  const [linkLayers, setLinkLayers] = useState(false);
 
   // При смене режима — подгружаем values из соответствующего localStorage и применяем
   useEffect(() => {
@@ -159,7 +162,27 @@ export default function HeroDevPanel() {
   if (!mounted || !mode) return null;
 
   const update = (key: string, val: number) =>
-    setValues((v) => ({ ...v, [key]: val }));
+    setValues((v) => {
+      const next: Record<string, number> = { ...v, [key]: val };
+      if (linkLayers && key.startsWith("body-")) {
+        const prev = v[key] ?? 0;
+        const delta = val - prev;
+        // Сдвиг по X и Y — простая дельта
+        if (key === "body-right") {
+          next["hand-right"] = (v["hand-right"] ?? 0) + delta;
+          next["cam-right"] = (v["cam-right"] ?? 0) + delta;
+        } else if (key === "body-bottom") {
+          next["hand-bottom"] = (v["hand-bottom"] ?? 0) + delta;
+          next["cam-bottom"] = (v["cam-bottom"] ?? 0) + delta;
+        } else if (key === "body-height" && prev !== 0) {
+          // Масштаб — пропорциональное изменение размеров
+          const ratio = val / prev;
+          next["hand-width"] = (v["hand-width"] ?? 0) * ratio;
+          next["cam-width"] = (v["cam-width"] ?? 0) * ratio;
+        }
+      }
+      return next;
+    });
 
   const reset = () => setValues(defaultValues());
 
@@ -242,7 +265,16 @@ export default function HeroDevPanel() {
             <span className="text-[10px] tracking-[0.18em] uppercase text-fg-faint">
               Hero tuner · {MODES[mode].label}
             </span>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              <button
+                onClick={() => setLinkLayers((v) => !v)}
+                className={`text-[10px] tracking-[0.12em] uppercase transition-colors ${
+                  linkLayers ? "text-accent" : "text-fg-faint hover:text-fg"
+                }`}
+                title="Когда вкл — изменение body-* двигает hand-* и cam-* на ту же дельту"
+              >
+                🔗 Link {linkLayers ? "ON" : "OFF"}
+              </button>
               <button
                 onClick={reset}
                 className="text-[10px] tracking-[0.12em] uppercase text-fg-faint hover:text-fg"
