@@ -133,6 +133,38 @@
   }
 }
 
+/* ─── DESKTOP HERO LAYOUT (≥ 1280px) ─── */
+/* Подобрано Славой через HeroDevPanel на десктопе. */
+@media (min-width: 1280px) {
+  :root {
+    --body-right: 2.5vw;
+    --body-bottom: 6.5vh;
+    --body-height: 176vh;
+    --hand-right: 6.5%;
+    --hand-bottom: 4%;
+    --hand-width: 86.5%;
+    --cam-right: 6%;
+    --cam-bottom: 8%;
+    --cam-width: 55%;
+    --aura-right: -20vw;
+    --aura-bottom: -15vh;
+    --aura-size: 90vh;
+    --aura-opacity: 0.7;
+    --vignette-opacity: 0.6;
+    --tint-opacity: 0.2;
+    --caption-x: 0px;
+    --caption-y: 0px;
+    --caption-scale: 1;
+    --name-x: 0px;
+    --name-y: 0px;
+    --name-scale: 1;
+    --bio-x: 0px;
+    --bio-y: 0px;
+    --bio-scale: 1;
+    --bio-max-w: 100vw;
+  }
+}
+
 /* ─── MOBILE HERO LAYOUT (под ≤ 767px) ─── */
 /* Body — позиция/размер к viewport. Hand и Camera — % от body. */
 @media (max-width: 767px) {

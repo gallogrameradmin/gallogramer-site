@@ -101,8 +101,10 @@ function defaultValues() {
 }
 
 function format(k: Knob, v: number): string {
-  // Opacity ключи (aura/vignette/tint-opacity) — нужны как decimal 0..1
+  // Opacity ключи (aura/vignette/tint-opacity) — decimal 0..1
   if (k.key.endsWith("-opacity")) return String(v / 100);
+  // Scale ключи (caption/name/bio-scale) — decimal 0..N (CSS transform scale хочет number)
+  if (k.key.endsWith("-scale")) return String(v / 100);
   // Остальные "%" — CSS-длина "X%"
   if (k.suffix === "%") return `${v}%`;
   if (k.suffix === "px") return `${v}px`;
