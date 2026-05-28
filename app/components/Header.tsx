@@ -15,6 +15,7 @@ const SECTION_TO_LINK: Record<string, string> = {
 const links = [
   { href: "/", label: "Home" },
   { href: "/portfolio", label: "Portfolio" },
+  { href: "/services", label: "Услуги" },
   { href: "/request", label: "Заявка" },
 ];
 
