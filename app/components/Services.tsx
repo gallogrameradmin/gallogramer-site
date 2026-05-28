@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { photos } from "@/app/data/photos";
+import type { Photo } from "@/app/lib/photos-source";
 import DecorField from "./DecorField";
 import EdgeMarks from "./EdgeMarks";
 
@@ -63,9 +63,12 @@ const services: Service[] = [
   },
 ];
 
-export default function Services() {
+export default function Services({ photos }: { photos: Photo[] }) {
   const [active, setActive] = useState(0);
-  const currentPhoto = photos[services[active].photoIdx % photos.length];
+  const currentPhoto =
+    photos.length > 0
+      ? photos[services[active].photoIdx % photos.length]
+      : null;
 
   return (
     <section

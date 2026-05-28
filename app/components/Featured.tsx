@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { photos } from "@/app/data/photos";
+import type { Photo } from "@/app/lib/photos-source";
 import CornerBrackets from "./CornerBrackets";
 import DecorField from "./DecorField";
 import EdgeMarks from "./EdgeMarks";
@@ -11,9 +11,13 @@ import EdgeMarks from "./EdgeMarks";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 // 5 hand-picked indices spread across the archive
-const picks = [0, 14, 28, 42, 60].map((i) => photos[i % photos.length]);
+const PICK_INDICES = [0, 14, 28, 42, 60];
 
-export default function Featured() {
+export default function Featured({ photos }: { photos: Photo[] }) {
+  const picks =
+    photos.length > 0
+      ? PICK_INDICES.map((i) => photos[i % photos.length])
+      : [];
   return (
     <section
       id="works"

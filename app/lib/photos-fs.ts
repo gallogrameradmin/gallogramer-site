@@ -1,88 +1,93 @@
 /**
- * Утилиты для работы с медиа-файлами в public/ на стороне бота.
- * Объединённый список фото + видео для команд /list и /del.
+ * Утилиты бота для list/del операций над медиа в Yandex Object Storage.
+ * Раньше работали с public/photos/ + public/videos/, теперь — с бакетами.
  */
 import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  statSync,
-  unlinkSync,
-} from "node:fs";
-import { join } from "node:path";
-
-const photosDir = () => join(process.cwd(), "public", "photos");
-const videosDir = () => join(process.cwd(), "public", "videos");
-const thumbsDir = () => join(process.cwd(), "public", "videos", "thumbs");
-
-function ensure(dir: string) {
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-}
+  PHOTOS_BUCKET,
+  VIDEOS_BUCKET,
+  listObjects,
+  deleteObject,
+} from "./s3";
 
 export type MediaKind = "photo" | "video";
 
 export type MediaEntry = {
   kind: MediaKind;
-  filename: string;
-  mtimeMs: number;
+  filename: string; // S3 key
+  mtimeMs: number; // lastModified.getTime()
 };
 
-export function listPhotos(): MediaEntry[] {
-  const dir = photosDir();
-  ensure(dir);
-  return readdirSync(dir)
-    .filter((f) => /\.(jpe?g|png|webp|avif)$/i.test(f))
-    .map((filename) => ({
+const PHOTO_EXT_RE = /\.(jpe?g|png|webp|avif)$/i;
+const VIDEO_EXT_RE = /\.(mp4|mov|webm|m4v)$/i;
+
+function isRealMediaKey(key: string) {
+  // Игнорируем служебные пути (_state/, thumbs/) и manifest.json
+  if (key.startsWith("_")) return false;
+  if (key.startsWith("thumbs/")) return false;
+  if (key === "manifest.json") return false;
+  return true;
+}
+
+export async function listPhotos(): Promise<MediaEntry[]> {
+  const all = await listObjects(PHOTOS_BUCKET);
+  return all
+    .filter((o) => isRealMediaKey(o.key) && PHOTO_EXT_RE.test(o.key))
+    .map((o) => ({
       kind: "photo" as const,
-      filename,
-      mtimeMs: statSync(join(dir, filename)).mtimeMs,
+      filename: o.key,
+      mtimeMs: o.lastModified?.getTime() ?? 0,
     }));
 }
 
-export function listVideos(): MediaEntry[] {
-  const dir = videosDir();
-  ensure(dir);
-  return readdirSync(dir)
-    .filter((f) => /\.(mp4|mov|webm|m4v)$/i.test(f))
-    .map((filename) => ({
+export async function listVideos(): Promise<MediaEntry[]> {
+  const all = await listObjects(VIDEOS_BUCKET);
+  return all
+    .filter((o) => isRealMediaKey(o.key) && VIDEO_EXT_RE.test(o.key))
+    .map((o) => ({
       kind: "video" as const,
-      filename,
-      mtimeMs: statSync(join(dir, filename)).mtimeMs,
+      filename: o.key,
+      mtimeMs: o.lastModified?.getTime() ?? 0,
     }));
 }
 
-/** Объединённый список фото + видео, отсортирован по mtime DESC */
-export function listAllMedia(): MediaEntry[] {
-  return [...listPhotos(), ...listVideos()].sort(
-    (a, b) => b.mtimeMs - a.mtimeMs,
-  );
+/** Объединённый список фото + видео, отсортирован по mtime DESC. */
+export async function listAllMedia(): Promise<MediaEntry[]> {
+  const [p, v] = await Promise.all([listPhotos(), listVideos()]);
+  return [...p, ...v].sort((a, b) => b.mtimeMs - a.mtimeMs);
 }
 
-/** Удалить медиа-файл. Для видео заодно удаляет тамбнейл если есть. */
-export function deleteMedia(kind: MediaKind, filename: string): boolean {
-  const safe = filename.replace(/[\\/]/g, "").trim();
-  if (!safe || safe.startsWith(".")) return false;
+/** Удалить медиа из бакета. Для видео — заодно тамбнейл, если есть. */
+export async function deleteMedia(
+  kind: MediaKind,
+  filename: string,
+): Promise<boolean> {
+  const safe = filename.trim();
+  if (!safe || safe.startsWith(".") || safe.startsWith("_")) return false;
 
-  const dir = kind === "photo" ? photosDir() : videosDir();
-  const full = join(dir, safe);
-  if (!existsSync(full)) return false;
-  unlinkSync(full);
+  const bucket = kind === "photo" ? PHOTOS_BUCKET : VIDEOS_BUCKET;
+  try {
+    await deleteObject(bucket, safe);
+  } catch (err) {
+    console.error("[photos-fs] delete failed:", err);
+    return false;
+  }
 
   if (kind === "video") {
-    // Тамбнейл лежит в /videos/thumbs/ под тем же базовым именем + .jpg
     const base = safe.replace(/\.[^.]+$/, "");
-    const thumbPath = join(thumbsDir(), `${base}.jpg`);
-    if (existsSync(thumbPath)) {
-      try {
-        unlinkSync(thumbPath);
-      } catch {}
+    const thumbKey = `thumbs/${base}.jpg`;
+    try {
+      await deleteObject(VIDEOS_BUCKET, thumbKey);
+    } catch {
+      // ok если превью не было
     }
   }
   return true;
 }
 
-export function findMediaByHint(hint: string): MediaEntry | null {
-  const all = listAllMedia();
+export async function findMediaByHint(
+  hint: string,
+): Promise<MediaEntry | null> {
+  const all = await listAllMedia();
   if (!hint) return null;
   const exact = all.find((m) => m.filename === hint);
   if (exact) return exact;

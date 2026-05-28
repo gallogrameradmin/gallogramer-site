@@ -3,8 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import type { Photo } from "@/app/data/photos";
-import type { Video } from "@/app/data/videos";
+import type { Photo, Video } from "@/app/lib/photos-source";
 
 export type LightboxItem =
   | ({ kind: "photo" } & Photo)

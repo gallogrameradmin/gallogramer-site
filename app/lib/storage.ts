@@ -1,9 +1,8 @@
 /**
- * Хранилище состояния бота — двойной режим:
- *   • Локально (нет UPSTASH_REDIS_REST_URL): пишем в data/state.json.
- *   • На Vercel (есть Upstash env-vars): пишем в Upstash Redis.
+ * Хранилище состояния бота на Yandex Object Storage.
+ * Один JSON-файл `_state/bot.json` в bucket gallogramer-photos.
  *
- * Все функции — async, потому что Redis сетевой.
+ * На локальной разработке (без YC_S3_KEY) — fallback в data/state.json.
  */
 import {
   existsSync,
@@ -12,10 +11,15 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { Redis } from "@upstash/redis";
+import {
+  STATE_BUCKET,
+  STATE_KEY,
+  getObjectJSON,
+  putObjectJSON,
+} from "./s3";
 
-const dataDir = join(process.cwd(), "data");
-const filePath = join(dataDir, "state.json");
+const localDir = join(process.cwd(), "data");
+const localPath = join(localDir, "state.json");
 
 export type ListedItem = { kind: "photo" | "video"; filename: string };
 
@@ -31,24 +35,15 @@ const DEFAULTS: State = {
   lastListedItems: [],
 };
 
-const REDIS_KEY = "gallogramer:bot:state";
-
-// ─── Redis (prod) ───
-let redis: Redis | null = null;
-function getRedis(): Redis | null {
-  if (redis) return redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  redis = new Redis({ url, token });
-  return redis;
+function hasS3() {
+  return !!(process.env.YC_S3_KEY && process.env.YC_S3_SECRET);
 }
 
-// ─── File (dev) ───
-function loadFile(): State {
+// ─── Local fallback (для npm run bot без S3) ───
+function loadLocal(): State {
   try {
-    if (!existsSync(filePath)) return { ...DEFAULTS };
-    const raw = readFileSync(filePath, "utf8");
+    if (!existsSync(localPath)) return { ...DEFAULTS };
+    const raw = readFileSync(localPath, "utf8");
     const parsed = JSON.parse(raw) as Partial<State>;
     return {
       ...DEFAULTS,
@@ -61,48 +56,42 @@ function loadFile(): State {
   }
 }
 
-function saveFile(state: State) {
+function saveLocal(state: State) {
   try {
-    if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-    writeFileSync(filePath, JSON.stringify(state, null, 2));
+    if (!existsSync(localDir)) mkdirSync(localDir, { recursive: true });
+    writeFileSync(localPath, JSON.stringify(state, null, 2));
   } catch (err) {
-    console.error("[storage] file save failed:", err);
+    console.error("[storage] local save failed:", err);
   }
 }
 
-// ─── unified load/save ───
 async function load(): Promise<State> {
-  const r = getRedis();
-  if (r) {
-    try {
-      const raw = await r.get<State>(REDIS_KEY);
-      if (!raw) return { ...DEFAULTS };
-      return {
-        ...DEFAULTS,
-        ...raw,
-        greeted: raw.greeted ?? [],
-        lastListedItems: raw.lastListedItems ?? [],
-      };
-    } catch (err) {
-      console.error("[storage] redis load failed:", err);
-      return { ...DEFAULTS };
-    }
+  if (!hasS3()) return loadLocal();
+  try {
+    const raw = await getObjectJSON<Partial<State>>(STATE_BUCKET, STATE_KEY);
+    if (!raw) return { ...DEFAULTS };
+    return {
+      ...DEFAULTS,
+      ...raw,
+      greeted: raw.greeted ?? [],
+      lastListedItems: raw.lastListedItems ?? [],
+    };
+  } catch (err) {
+    console.error("[storage] S3 load failed:", err);
+    return { ...DEFAULTS };
   }
-  return loadFile();
 }
 
 async function save(state: State): Promise<void> {
-  const r = getRedis();
-  if (r) {
-    try {
-      await r.set(REDIS_KEY, state);
-      return;
-    } catch (err) {
-      console.error("[storage] redis save failed:", err);
-      return;
-    }
+  if (!hasS3()) {
+    saveLocal(state);
+    return;
   }
-  saveFile(state);
+  try {
+    await putObjectJSON(STATE_BUCKET, STATE_KEY, state);
+  } catch (err) {
+    console.error("[storage] S3 save failed:", err);
+  }
 }
 
 // ─── greeted clients ───

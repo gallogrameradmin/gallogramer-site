@@ -278,7 +278,7 @@ async function handleAdminCommand(msg: TgMessage, env: RelayEnv) {
       }
       await setUploadMode(false);
       try {
-        const r = regenerateAllManifests();
+        const r = await regenerateAllManifests();
         await sendMessage(env.token, {
           chat_id: env.adminChatId!,
           text:
@@ -328,7 +328,7 @@ async function handleList(msg: TgMessage, env: RelayEnv) {
   const requested = parseInt(args[0] ?? "20", 10);
   const N = Math.min(50, Math.max(1, isNaN(requested) ? 20 : requested));
 
-  const all = listAllMedia();
+  const all = await listAllMedia();
   if (all.length === 0) {
     await sendMessage(env.token, {
       chat_id: env.adminChatId!,
@@ -382,7 +382,7 @@ async function handleDelete(msg: TgMessage, env: RelayEnv) {
   const arg = args[0];
 
   if (arg === "last") {
-    const all = listAllMedia();
+    const all = await listAllMedia();
     const first = all[0];
     if (first) item = { kind: first.kind, filename: first.filename };
   } else if (/^\d+$/.test(arg)) {
@@ -404,7 +404,7 @@ async function handleDelete(msg: TgMessage, env: RelayEnv) {
     }
     item = last[idx];
   } else {
-    const found = findMediaByHint(arg);
+    const found = await findMediaByHint(arg);
     if (found) item = { kind: found.kind, filename: found.filename };
   }
 
@@ -417,7 +417,7 @@ async function handleDelete(msg: TgMessage, env: RelayEnv) {
     return;
   }
 
-  const ok = deleteMedia(item.kind, item.filename);
+  const ok = await deleteMedia(item.kind, item.filename);
   if (!ok) {
     await sendMessage(env.token, {
       chat_id: env.adminChatId!,
@@ -428,7 +428,7 @@ async function handleDelete(msg: TgMessage, env: RelayEnv) {
   }
 
   try {
-    const r = regenerateAllManifests();
+    const r = await regenerateAllManifests();
     const icon = item.kind === "photo" ? "📷" : "🎥";
     await sendMessage(env.token, {
       chat_id: env.adminChatId!,

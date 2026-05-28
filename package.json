@@ -11,6 +11,8 @@
     "sync-pinterest": "tsx scripts/sync-pinterest.mts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1055.0",
+    "@aws-sdk/lib-storage": "^3.1055.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",

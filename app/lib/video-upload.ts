@@ -1,15 +1,16 @@
 /**
- * Сохранение видео, полученного от Telegram-бота.
- * Telegram-бот лимит на скачивание = 20 МБ. Если файл больше — getFile вернёт ошибку.
+ * Сохранение видео от Telegram-бота:
+ *  - скачивает оригинал из Telegram CDN (лимит бот-API: 20 МБ)
+ *  - заливает в Yandex Object Storage (bucket gallogramer-videos)
+ *  - превью сохраняет в подпапку thumbs/
  */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   fileDownloadUrl,
   getFilePath,
   type TgPhotoSize,
   type TgVideo,
 } from "./telegram";
+import { VIDEOS_BUCKET, publicUrl, putObject } from "./s3";
 
 export type SavedVideo = {
   src: string;
@@ -17,16 +18,23 @@ export type SavedVideo = {
   w: number;
   h: number;
   duration: number;
+  key: string;
 };
 
-const VIDEOS_DIR = () => join(process.cwd(), "public", "videos");
-const THUMBS_DIR = () => join(process.cwd(), "public", "videos", "thumbs");
+const ALLOWED_VIDEO_EXT = new Set(["mp4", "mov", "webm", "m4v"]);
 
-function ensureDirs() {
-  if (!existsSync(VIDEOS_DIR()))
-    mkdirSync(VIDEOS_DIR(), { recursive: true });
-  if (!existsSync(THUMBS_DIR()))
-    mkdirSync(THUMBS_DIR(), { recursive: true });
+function mime(ext: string) {
+  switch (ext) {
+    case "mp4":
+    case "m4v":
+      return "video/mp4";
+    case "mov":
+      return "video/quicktime";
+    case "webm":
+      return "video/webm";
+    default:
+      return "video/mp4";
+  }
 }
 
 export async function downloadAndSaveVideo(
@@ -34,8 +42,6 @@ export async function downloadAndSaveVideo(
   video: TgVideo,
   messageId: number,
 ): Promise<SavedVideo> {
-  ensureDirs();
-
   // 1. Скачиваем сам видеофайл
   const filePath = await getFilePath(token, video.file_id);
   const url = fileDownloadUrl(token, filePath);
@@ -47,33 +53,33 @@ export async function downloadAndSaveVideo(
     );
   const buf = Buffer.from(await res.arrayBuffer());
 
-  // Сохраняем — пытаемся определить расширение
-  const ext = (filePath.split(".").pop() ?? "mp4").toLowerCase();
-  const safeExt = ["mp4", "mov", "webm", "m4v"].includes(ext) ? ext : "mp4";
+  const rawExt = (filePath.split(".").pop() ?? "mp4").toLowerCase();
+  const ext = ALLOWED_VIDEO_EXT.has(rawExt) ? rawExt : "mp4";
   const ts = Date.now();
-  const filename = `tg-${ts}-${messageId}.${safeExt}`;
-  writeFileSync(join(VIDEOS_DIR(), filename), buf);
+  const key = `tg-${ts}-${messageId}.${ext}`;
+  await putObject(VIDEOS_BUCKET, key, buf, mime(ext));
 
-  // 2. Пытаемся скачать превью (если Telegram прислал)
-  let thumbName: string | null = null;
+  // 2. Превью если есть
+  let thumbKey: string | null = null;
   if (video.thumbnail) {
     try {
-      thumbName = await downloadThumb(token, video.thumbnail, ts, messageId);
+      thumbKey = await uploadThumb(token, video.thumbnail, ts, messageId);
     } catch (err) {
       console.warn("[video-upload] thumb fail:", err);
     }
   }
 
   return {
-    src: `/videos/${filename}`,
-    thumb: thumbName ? `/videos/thumbs/${thumbName}` : null,
+    src: publicUrl(VIDEOS_BUCKET, key),
+    thumb: thumbKey ? publicUrl(VIDEOS_BUCKET, thumbKey) : null,
     w: video.width || 1280,
     h: video.height || 720,
     duration: video.duration || 0,
+    key,
   };
 }
 
-async function downloadThumb(
+async function uploadThumb(
   token: string,
   thumb: TgPhotoSize,
   ts: number,
@@ -84,7 +90,7 @@ async function downloadThumb(
   const r = await fetch(url);
   if (!r.ok) throw new Error(`thumb HTTP ${r.status}`);
   const buf = Buffer.from(await r.arrayBuffer());
-  const filename = `tg-${ts}-${messageId}.jpg`;
-  writeFileSync(join(THUMBS_DIR(), filename), buf);
-  return filename;
+  const key = `thumbs/tg-${ts}-${messageId}.jpg`;
+  await putObject(VIDEOS_BUCKET, key, buf, "image/jpeg");
+  return key;
 }

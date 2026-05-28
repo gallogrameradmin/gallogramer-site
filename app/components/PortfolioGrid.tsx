@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { photos } from "@/app/data/photos";
-import { videos } from "@/app/data/videos";
+import type { Photo, Video } from "@/app/lib/photos-source";
 import Lightbox, { type LightboxItem } from "./Lightbox";
 import CornerBrackets from "./CornerBrackets";
 import ButtonAura from "./ButtonAura";
@@ -15,7 +14,13 @@ type Tab = "all" | "photo" | "video";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export default function PortfolioGrid() {
+export default function PortfolioGrid({
+  photos,
+  videos,
+}: {
+  photos: Photo[];
+  videos: Video[];
+}) {
   const [tab, setTab] = useState<Tab>("all");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 

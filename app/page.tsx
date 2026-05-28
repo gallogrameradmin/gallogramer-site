@@ -3,8 +3,13 @@ import Marquee from "./components/Marquee";
 import Featured from "./components/Featured";
 import Services from "./components/Services";
 import Footer from "./components/Footer";
+import { getPhotos } from "./lib/photos-source";
 
-export default function Home() {
+// Перепроверять манифест на YC Object Storage каждые 60 секунд
+export const revalidate = 60;
+
+export default async function Home() {
+  const photos = await getPhotos();
   return (
     <main>
       <Hero />
@@ -12,8 +17,8 @@ export default function Home() {
         items={["Brutalism", "Photo", "Video", "Cinema", "Portrait"]}
         speed={50}
       />
-      <Services />
-      <Featured />
+      <Services photos={photos} />
+      <Featured photos={photos} />
       <Footer />
     </main>
   );

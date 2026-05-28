@@ -1,60 +1,69 @@
 /**
- * Сохранение фото, полученного от Telegram-бота:
- * - скачивает из Telegram CDN
- * - сохраняет в public/photos/
- * - возвращает результат для манифеста
+ * Сохранение фото от Telegram-бота:
+ *  - скачивает оригинал из Telegram CDN
+ *  - заливает в Yandex Object Storage (bucket gallogramer-photos)
+ *  - возвращает публичный URL для манифеста
  */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { imageSize } from "image-size";
 import { fileDownloadUrl, getFilePath, type TgPhotoSize } from "./telegram";
+import { PHOTOS_BUCKET, publicUrl, putObject } from "./s3";
 
 export type SavedPhoto = {
   src: string;
   w: number;
   h: number;
+  key: string;
 };
 
-/**
- * Скачивает самый крупный вариант фото и сохраняет в public/photos/.
- */
+const ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "webp"]);
+
+function mime(ext: string) {
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    default:
+      return "image/jpeg";
+  }
+}
+
 export async function downloadAndSavePhoto(
   token: string,
   photoSizes: TgPhotoSize[],
   messageId: number,
 ): Promise<SavedPhoto> {
-  // Берём самый крупный вариант (Telegram сортирует по возрастанию размера)
   const largest = photoSizes[photoSizes.length - 1];
   if (!largest) throw new Error("Нет вариантов фото в сообщении");
 
   const filePath = await getFilePath(token, largest.file_id);
   const url = fileDownloadUrl(token, filePath);
-
   const res = await fetch(url);
-  if (!res.ok)
-    throw new Error(`Не удалось скачать фото: HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`Не удалось скачать фото: HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
 
-  // Определяем расширение по file_path (jpg/png/webp)
-  const ext = (filePath.split(".").pop() ?? "jpg").toLowerCase();
-  const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
+  const rawExt = (filePath.split(".").pop() ?? "jpg").toLowerCase();
+  const ext = ALLOWED_EXT.has(rawExt) ? rawExt : "jpg";
 
-  // Имя файла: tg-{timestamp}-{messageId}.{ext}
   const ts = Date.now();
-  const filename = `tg-${ts}-${messageId}.${safeExt}`;
-  const photosDir = join(process.cwd(), "public", "photos");
-  if (!existsSync(photosDir)) mkdirSync(photosDir, { recursive: true });
-  const outPath = join(photosDir, filename);
-  writeFileSync(outPath, buf);
+  const key = `tg-${ts}-${messageId}.${ext}`;
+  await putObject(PHOTOS_BUCKET, key, buf, mime(ext));
 
-  // Размеры предпочитаем из Telegram (быстрее, без чтения файла)
   let w = largest.width;
   let h = largest.height;
   if (!w || !h) {
-    const dim = imageSize(buf);
-    w = dim.width ?? 1280;
-    h = dim.height ?? 1280;
+    try {
+      const dim = imageSize(buf);
+      w = dim.width ?? 1280;
+      h = dim.height ?? 1280;
+    } catch {
+      w = 1280;
+      h = 1280;
+    }
   }
 
-  return { src: `/photos/${filename}`, w, h };
+  return { src: publicUrl(PHOTOS_BUCKET, key), w, h, key };
 }
