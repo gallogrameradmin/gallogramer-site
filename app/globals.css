@@ -166,35 +166,42 @@
 }
 
 /* ─── MOBILE HERO LAYOUT (под ≤ 767px) ─── */
-/* Body — позиция/размер к viewport. Hand и Camera — % от body. */
+/* Подобрано Славой через HeroDevPanel + Header tuner на мобильном.
+   Body — позиция/размер к viewport. Hand и Camera — % от body. */
 @media (max-width: 767px) {
   :root {
-    --body-right: -28.5vw;
-    --body-bottom: 11vh;
-    --body-height: 118vh;
-    /* Hand / Camera теперь в % от body wrapper — композиция не расползается */
-    --hand-right: 3%;
-    --hand-bottom: 8%;
-    --hand-width: 95%;
-    --cam-right: 25%;
-    --cam-bottom: 32%;
-    --cam-width: 55%;
-    --aura-right: -20vw;
+    --body-right: -13vw;
+    --body-bottom: 20.5vh;
+    --body-height: 70vh;
+    --hand-right: 7%;
+    --hand-bottom: 9%;
+    --hand-width: 80%;
+    --cam-right: 14%;
+    --cam-bottom: 16%;
+    --cam-width: 45%;
+    --aura-right: -75.5vw;
     --aura-bottom: -15vh;
     --aura-size: 90vh;
     --aura-opacity: 0.7;
     --vignette-opacity: 0.6;
     --tint-opacity: 0.2;
-    --caption-x: 10px;
-    --caption-y: -310px;
-    --caption-scale: 0.8;
-    --name-x: 9px;
-    --name-y: -314px;
-    --name-scale: 1.1;
+    --caption-x: 0px;
+    --caption-y: -82px;
+    --caption-scale: 0.72;
+    --name-x: -6px;
+    --name-y: -90px;
+    --name-scale: 1;
     --bio-x: 0px;
     --bio-y: 0px;
-    --bio-scale: 1;
-    --bio-max-w: 100vw;
+    --bio-scale: 0.92;
+    --bio-max-w: 95vw;
+    /* Header — твои значения из tuner'а */
+    --header-pl: 16px;
+    --header-pr: 16px;
+    --header-py: 6px;
+    --logo-h: 24px;
+    --nav-size: 9px;
+    --nav-gap: 10px;
   }
 }
 
