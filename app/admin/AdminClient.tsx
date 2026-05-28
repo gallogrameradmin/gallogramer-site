@@ -2,6 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/**
+ * Когда админка открыта через www.gallogramer.com (YC CDN не пропускает POST),
+ * все API-вызовы редиректим напрямую в vercel.app. На vercel.app/localhost —
+ * используем относительные пути.
+ */
+function apiBase(): string {
+  if (typeof window === "undefined") return "";
+  const h = window.location.hostname;
+  if (h === "www.gallogramer.com" || h === "gallogramer.com") {
+    return "https://gallogramer-site.vercel.app";
+  }
+  return "";
+}
+
 type MediaItem = {
   kind: "photo" | "video";
   key: string;
@@ -40,7 +54,7 @@ export default function AdminClient() {
     if (!t) return;
     // Проверка токена через /list — если 200, токен ок
     try {
-      const r = await fetch("/api/admin/list", {
+      const r = await fetch(`${apiBase()}/api/admin/list`, {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (!r.ok) {
@@ -118,7 +132,7 @@ function AuthedAdmin({
 
   const fetchList = useCallback(async () => {
     try {
-      const r = await fetch("/api/admin/list", {
+      const r = await fetch(`${apiBase()}/api/admin/list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -149,7 +163,7 @@ function AuthedAdmin({
     ]);
     try {
       // 1. Получаем подписанный URL
-      const signResp = await fetch("/api/admin/sign-upload", {
+      const signResp = await fetch(`${apiBase()}/api/admin/sign-upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -205,7 +219,7 @@ function AuthedAdmin({
       }
 
       // 4. Финализация → регенерация манифеста
-      const finResp = await fetch("/api/admin/finalize", {
+      const finResp = await fetch(`${apiBase()}/api/admin/finalize`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -245,7 +259,7 @@ function AuthedAdmin({
     const target = pendingDelete;
     setPendingDelete(null);
     try {
-      const r = await fetch("/api/admin/delete", {
+      const r = await fetch(`${apiBase()}/api/admin/delete`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
