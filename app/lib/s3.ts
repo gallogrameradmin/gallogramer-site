@@ -25,7 +25,21 @@ export const STATE_KEY = "_state/bot.json";
 export const PHOTOS_MANIFEST_KEY = "manifest.json";
 export const VIDEOS_MANIFEST_KEY = "manifest.json";
 
+/**
+ * Публичный URL для медиа — через /media/{photos,videos}/<key> на нашем домене.
+ * Это идёт через YC CDN (быстрый кэш на российских эджах), Next.js rewrite
+ * проксирует на storage.yandexcloud.net.
+ *
+ * Для прямого доступа к объекту (например, в админ-скриптах) есть directObjectUrl().
+ */
 export function publicUrl(bucket: string, key: string) {
+  const safeKey = encodeURIComponent(key);
+  if (bucket === PHOTOS_BUCKET) return `/media/photos/${safeKey}`;
+  if (bucket === VIDEOS_BUCKET) return `/media/videos/${safeKey}`;
+  return directObjectUrl(bucket, key);
+}
+
+export function directObjectUrl(bucket: string, key: string) {
   return `${ENDPOINT}/${bucket}/${encodeURIComponent(key)}`;
 }
 
