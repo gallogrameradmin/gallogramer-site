@@ -57,18 +57,26 @@ const KNOBS: Knob[] = [
   { key: "mobile-marquee-duration", label: "Marquee · duration (сек)", min: 4, max: 40, step: 0.5, suffix: "s", default: 12 },
 ];
 
-type Mode = "mobile" | "tablet";
+type Mode = "mobile" | "tablet" | "tablet-wide";
 
-const MODES: Record<Mode, { storageKey: string; styleId: string; mediaQuery: string }> = {
+const MODES: Record<Mode, { storageKey: string; styleId: string; mediaQuery: string; label: string }> = {
   mobile: {
     storageKey: "hero-mobile-dev-knobs",
     styleId: "hero-mobile-dev-overrides",
     mediaQuery: "@media (max-width: 767px)",
+    label: "MOBILE ≤767px",
   },
   tablet: {
     storageKey: "hero-tablet-dev-knobs",
     styleId: "hero-tablet-dev-overrides",
     mediaQuery: "@media (min-width: 768px) and (max-width: 1023px)",
+    label: "TABLET 768-1023px",
+  },
+  "tablet-wide": {
+    storageKey: "hero-tablet-wide-dev-knobs",
+    styleId: "hero-tablet-wide-dev-overrides",
+    mediaQuery: "@media (min-width: 1024px) and (max-width: 1279px)",
+    label: "TABLET WIDE 1024-1279px",
   },
 };
 
@@ -76,6 +84,7 @@ function detectMode(): Mode | null {
   const w = window.innerWidth;
   if (w < 768) return "mobile";
   if (w < 1024) return "tablet";
+  if (w < 1280) return "tablet-wide";
   return null;
 }
 
@@ -107,8 +116,8 @@ function applyOverrides(mode: Mode, values: Record<string, number>) {
 }
 
 /**
- * Hero dev-панель. Видна на mobile (<768) и tablet (768-1023).
- * Каждый режим пишет в свой @media block — desktop не задет.
+ * Hero dev-панель. Видна на mobile (<768), tablet (768-1023), tablet-wide (1024-1279).
+ * Каждый режим пишет в свой @media block — desktop (≥1280) не задет.
  */
 export default function HeroDevPanel() {
   const [open, setOpen] = useState(false);
@@ -231,7 +240,7 @@ export default function HeroDevPanel() {
           {/* Header drawer'а */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-line shrink-0">
             <span className="text-[10px] tracking-[0.18em] uppercase text-fg-faint">
-              Hero tuner · {mode === "tablet" ? "TABLET" : "MOBILE"}
+              Hero tuner · {MODES[mode].label}
             </span>
             <div className="flex gap-3">
               <button
@@ -300,7 +309,7 @@ export default function HeroDevPanel() {
             ) : null}
 
             <p className="text-[9px] tracking-[0.14em] uppercase text-fg-faint/70 mt-3 leading-relaxed">
-              Изменения ограничены текущим режимом ({mode === "tablet" ? "tablet 768-1023px" : "mobile ≤767px"}). Подгонишь — Copy CSS и пришли мне.
+              Изменения ограничены текущим режимом ({MODES[mode].label}). Подгонишь — Copy CSS и пришли мне.
             </p>
           </div>
         </div>
