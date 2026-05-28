@@ -25,7 +25,9 @@ export default function HeroContent({
   mode: Mode;
   portrait: string | null;
   reachBody: string | null;
+  hand?: string | null;
   camera: string | null;
+  bio?: string;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
 

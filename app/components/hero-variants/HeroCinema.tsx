@@ -19,6 +19,7 @@ type Props = {
   reachBody: string | null;
   hand: string | null;
   camera: string | null;
+  bio: string;
 };
 
 /**
@@ -29,7 +30,7 @@ type Props = {
  *
  * Плюс кинематографичное окружение: виньет, цветокор, спотлайт от курсора, пылинки.
  */
-export default function HeroCinema({ reachBody, hand, camera }: Props) {
+export default function HeroCinema({ reachBody, hand, camera, bio }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
 
   const mx = useMotionValue(0);
@@ -378,11 +379,8 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
             style={{ x: bioX, y: bioY }}
             className="mt-10 md:mt-14 grid md:grid-cols-12 gap-6 md:gap-12 items-end will-change-transform"
           >
-            <p className="md:col-span-6 text-base md:text-lg leading-relaxed text-fg-muted max-w-prose text-pretty">
-              Начинающий фотограф и видеограф преимущественно в стиле{" "}
-              <span className="text-fg">Брутализм</span>. Студент Колледжа
-              Сценарных искусств и дизайна. Снимаю всё — от школьных праздников до
-              закрытых вечеринок и корпоративных ивентов.
+            <p className="md:col-span-6 text-base md:text-lg leading-relaxed text-fg-muted max-w-prose text-pretty whitespace-pre-line">
+              {bio}
             </p>
           </motion.div>
         </div>

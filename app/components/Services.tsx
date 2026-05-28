@@ -4,71 +4,33 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Photo } from "@/app/lib/photos-source";
+import type { ServiceContent } from "@/app/lib/content-source";
 import DecorField from "./DecorField";
 import EdgeMarks from "./EdgeMarks";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-type Service = {
-  title: string;
-  description: string;
-  // Индекс из photos[] для превью слева
-  photoIdx: number;
-  // Подпись под превью — название кейса/съёмки
-  caseTitle: string;
-};
-
-const services: Service[] = [
-  {
-    title: "Репортаж",
-    description:
-      "Концерты, вечеринки, корпоративы. Снимаю, не отвлекая от процесса — отдаю 60-200 кадров за 5-7 дней.",
-    photoIdx: 3,
-    caseTitle: "Вечер у друзей",
-  },
-  {
-    title: "Портрет",
-    description:
-      "Студия или локация. Для соцсетей, личного бренда, портфолио. 1-2 часа съёмки, 20-40 ретушированных кадров.",
-    photoIdx: 15,
-    caseTitle: "Личный портрет",
-  },
-  {
-    title: "Видео",
-    description:
-      "Reels, тизеры, короткие ролики до 60 секунд. Съёмка + монтаж + музыка под ключ.",
-    photoIdx: 28,
-    caseTitle: "Реклама бренда",
-  },
-  {
-    title: "Лукбук",
-    description:
-      "Коммерческая съёмка для брендов одежды, мерча, аксессуаров. Студия или улица, постпродакшен в едином ключе.",
-    photoIdx: 42,
-    caseTitle: "Бренд одежды",
-  },
-  {
-    title: "Backstage",
-    description:
-      "Закулисье съёмок, репетиций, подготовки. Параллельно процессу, не вмешиваюсь в команду.",
-    photoIdx: 55,
-    caseTitle: "На съёмочной площадке",
-  },
-  {
-    title: "Интервью",
-    description:
-      "Съёмка диалогов и подкастов с подготовленным светом. 2-3 камеры, чистый звук, чистовой монтаж.",
-    photoIdx: 64,
-    caseTitle: "Подкаст-интервью",
-  },
-];
-
-export default function Services({ photos }: { photos: Photo[] }) {
+export default function Services({
+  photos,
+  services,
+}: {
+  photos: Photo[];
+  services: ServiceContent[];
+}) {
   const [active, setActive] = useState(0);
-  const currentPhoto =
-    photos.length > 0
-      ? photos[services[active].photoIdx % photos.length]
-      : null;
+  const currentService = services[active] ?? null;
+
+  // Подбираем превью: сначала пробуем явно указанный photoSrc, иначе берём
+  // фото по индексу из имеющегося портфолио (циклически, чтобы всегда что-то было).
+  const currentPhoto: Photo | null = (() => {
+    if (!currentService) return null;
+    if (currentService.photoSrc) {
+      const explicit = photos.find((p) => p.src === currentService.photoSrc);
+      if (explicit) return explicit;
+    }
+    if (photos.length === 0) return null;
+    return photos[(active * 13) % photos.length];
+  })();
 
   return (
     <section

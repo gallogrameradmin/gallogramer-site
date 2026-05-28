@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import HeroVariantClient from "./HeroVariantClient";
+import { getContent } from "../lib/content-source";
 
 function findFirst(root: string, names: string[]) {
   for (const name of names) {
@@ -11,8 +12,9 @@ function findFirst(root: string, names: string[]) {
   return null;
 }
 
-export default function Hero() {
+export default async function Hero() {
   const root = process.cwd();
+  const content = await getContent();
 
   const reachBody = findFirst(root, [
     "me-reach.png",
@@ -52,6 +54,7 @@ export default function Hero() {
       reachBody={reachBody}
       hand={hand}
       camera={camera}
+      bio={content.hero.bio}
     />
   );
 }

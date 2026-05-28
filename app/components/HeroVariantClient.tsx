@@ -23,6 +23,7 @@ type Props = {
   reachBody: string | null;
   hand: string | null;
   camera: string | null;
+  bio: string;
 };
 
 export default function HeroVariantClient(props: Props) {

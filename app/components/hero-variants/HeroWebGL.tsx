@@ -20,7 +20,9 @@ type Props = {
   mode: "portrait" | "reach";
   portrait: string | null;
   reachBody: string | null;
+  hand?: string | null;
   camera: string | null;
+  bio?: string;
 };
 
 /**

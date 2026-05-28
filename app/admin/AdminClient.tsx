@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ContentEditor from "./ContentEditor";
+
+type Tab = "media" | "content";
 
 /**
  * Когда админка открыта через www.gallogramer.com (YC CDN не пропускает POST),
@@ -155,6 +158,7 @@ function AuthedAdmin({
   token: string;
   onLogout: () => void;
 }) {
+  const [tab, setTab] = useState<Tab>("media");
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploads, setUploads] = useState<UploadState[]>([]);
@@ -317,10 +321,10 @@ function AuthedAdmin({
   return (
     <div className="px-4 md:px-8 pt-8 md:pt-12 pb-24 max-w-[1400px] mx-auto">
       {/* Шапка */}
-      <div className="flex items-end justify-between mb-8 md:mb-12 gap-6">
+      <div className="flex items-end justify-between mb-6 md:mb-8 gap-6">
         <div>
           <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-3">
-            <span className="text-accent">/Admin</span> · Media
+            <span className="text-accent">/Admin</span> · {tab === "media" ? "Media" : "Content"}
           </p>
           <h1 className="font-display font-medium tracking-[-0.03em] text-3xl md:text-5xl leading-none">
             Управление<span className="text-accent">.</span>
@@ -338,6 +342,35 @@ function AuthedAdmin({
         </button>
       </div>
 
+      {/* Переключатель вкладок */}
+      <div className="flex gap-1 mb-8 md:mb-10 border-b border-line">
+        {(
+          [
+            { key: "media", label: "Медиа" },
+            { key: "content", label: "Контент" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`px-4 md:px-5 py-2.5 text-[11px] font-mono tracking-[0.18em] uppercase transition-colors border-b-2 -mb-px ${
+              tab === t.key
+                ? "text-accent border-accent"
+                : "text-fg-faint border-transparent hover:text-fg"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Контент-редактор */}
+      {tab === "content" ? (
+        <ContentEditor token={token} apiBase={apiBase()} />
+      ) : null}
+
+      {tab !== "media" ? null : <>
       {/* Кнопки загрузки */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-8">
         <input
@@ -484,6 +517,7 @@ function AuthedAdmin({
           </div>
         </div>
       ) : null}
+      </>}
     </div>
   );
 }
