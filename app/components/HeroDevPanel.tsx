@@ -57,8 +57,27 @@ const KNOBS: Knob[] = [
   { key: "mobile-marquee-duration", label: "Marquee · duration (сек)", min: 4, max: 40, step: 0.5, suffix: "s", default: 12 },
 ];
 
-const STORAGE_KEY = "hero-mobile-dev-knobs";
-const STYLE_ID = "hero-mobile-dev-overrides";
+type Mode = "mobile" | "tablet";
+
+const MODES: Record<Mode, { storageKey: string; styleId: string; mediaQuery: string }> = {
+  mobile: {
+    storageKey: "hero-mobile-dev-knobs",
+    styleId: "hero-mobile-dev-overrides",
+    mediaQuery: "@media (max-width: 767px)",
+  },
+  tablet: {
+    storageKey: "hero-tablet-dev-knobs",
+    styleId: "hero-tablet-dev-overrides",
+    mediaQuery: "@media (min-width: 768px) and (max-width: 1023px)",
+  },
+};
+
+function detectMode(): Mode | null {
+  const w = window.innerWidth;
+  if (w < 768) return "mobile";
+  if (w < 1024) return "tablet";
+  return null;
+}
 
 function defaultValues() {
   const v: Record<string, number> = {};
@@ -72,56 +91,63 @@ function format(k: Knob, v: number): string {
   return `${v}${k.suffix}`;
 }
 
-function applyMobileOverrides(values: Record<string, number>) {
-  let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+function applyOverrides(mode: Mode, values: Record<string, number>) {
+  const cfg = MODES[mode];
+  let style = document.getElementById(cfg.styleId) as HTMLStyleElement | null;
   if (!style) {
     style = document.createElement("style");
-    style.id = STYLE_ID;
+    style.id = cfg.styleId;
     document.head.appendChild(style);
   }
   const lines = KNOBS.map((k) => {
     const v = values[k.key] ?? k.default;
     return `    --${k.key}: ${format(k, v)};`;
   });
-  style.textContent = `@media (max-width: 767px) {\n  :root {\n${lines.join("\n")}\n  }\n}`;
+  style.textContent = `${cfg.mediaQuery} {\n  :root {\n${lines.join("\n")}\n  }\n}`;
 }
 
 /**
- * Mobile-only dev-панель. Видна только когда window.innerWidth < 768.
- * Все ползунки пишут в @media (max-width: 767px) block, поэтому десктоп не задет.
+ * Hero dev-панель. Видна на mobile (<768) и tablet (768-1023).
+ * Каждый режим пишет в свой @media block — desktop не задет.
  */
 export default function HeroDevPanel() {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, number>>(defaultValues);
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [mode, setMode] = useState<Mode | null>(null);
   const [exported, setExported] = useState<string | null>(null);
 
+  // При смене режима — подгружаем values из соответствующего localStorage и применяем
   useEffect(() => {
+    if (!mode) return;
     let v = defaultValues();
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(MODES[mode].storageKey);
       if (raw) v = { ...v, ...JSON.parse(raw) };
     } catch {}
     setValues(v);
-    applyMobileOverrides(v);
+    applyOverrides(mode, v);
+  }, [mode]);
 
-    const check = () => setIsMobile(window.innerWidth < 768);
+  // Detect mode на mount + при resize
+  useEffect(() => {
+    const check = () => setMode(detectMode());
     check();
     window.addEventListener("resize", check);
     setMounted(true);
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Persist values + apply при их изменении
   useEffect(() => {
-    if (!mounted) return;
-    applyMobileOverrides(values);
+    if (!mounted || !mode) return;
+    applyOverrides(mode, values);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+      localStorage.setItem(MODES[mode].storageKey, JSON.stringify(values));
     } catch {}
-  }, [values, mounted]);
+  }, [values, mounted, mode]);
 
-  if (!mounted || !isMobile) return null;
+  if (!mounted || !mode) return null;
 
   const update = (key: string, val: number) =>
     setValues((v) => ({ ...v, [key]: val }));
@@ -133,7 +159,7 @@ export default function HeroDevPanel() {
       const v = values[k.key] ?? k.default;
       return `    --${k.key}: ${format(k, v)};`;
     });
-    const text = `@media (max-width: 767px) {\n  :root {\n${lines.join("\n")}\n  }\n}`;
+    const text = `${MODES[mode].mediaQuery} {\n  :root {\n${lines.join("\n")}\n  }\n}`;
     setExported(text);
     // Пробуем буфер, но не паримся если не вышло — показываем в textarea ниже
     if (
@@ -205,7 +231,7 @@ export default function HeroDevPanel() {
           {/* Header drawer'а */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-line shrink-0">
             <span className="text-[10px] tracking-[0.18em] uppercase text-fg-faint">
-              Mobile tuner
+              Hero tuner · {mode === "tablet" ? "TABLET" : "MOBILE"}
             </span>
             <div className="flex gap-3">
               <button
@@ -274,7 +300,7 @@ export default function HeroDevPanel() {
             ) : null}
 
             <p className="text-[9px] tracking-[0.14em] uppercase text-fg-faint/70 mt-3 leading-relaxed">
-              Изменения работают ТОЛЬКО на mobile viewport. Подгонишь — Copy CSS и пришли мне.
+              Изменения ограничены текущим режимом ({mode === "tablet" ? "tablet 768-1023px" : "mobile ≤767px"}). Подгонишь — Copy CSS и пришли мне.
             </p>
           </div>
         </div>
