@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Design tokens — light is default, dark via [data-theme="dark"]
+   Earth-tone base + один акцент (приглушённый красный)
+   ============================================================ */
+:root {
+  --bg: #F4F2EE;
+  --bg-soft: #E9E7E1;
+  --fg: #0E0E0E;
+  --fg-muted: #4A4A48;
+  --fg-faint: #8B8784;
+  --line: rgba(14, 14, 14, 0.10);
+  --accent: #191970;
+
+  /* Логотип в светлой теме — чёрный (без инверсии). В тёмной — инвертируется в белый. */
+  --logo-filter: invert(0);
+
+  /* iOS Liquid Glass — светлая тема (прозрачное матовое стекло) */
+  --glass-bg-1: rgba(255, 255, 255, 0.35);
+  --glass-bg-2: rgba(245, 245, 240, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-shadow: rgba(14, 14, 14, 0.18);
+  --glass-active-bg-1: rgba(25, 25, 112, 0.35);
+  --glass-active-bg-2: rgba(25, 25, 112, 0.18);
+
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+}
+
+/* Системные настройки тёмной темы — применяются до того как React успеет проставить data-theme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0B0B;
+    --bg-soft: #161616;
+    --fg: #ECEAE3;
+    --fg-muted: #B4B0A8;
+    --fg-faint: #6E6A62;
+    --line: rgba(236, 234, 227, 0.10);
+    --accent: #3B3FB3;
+    --logo-filter: invert(1);
+    --glass-bg-1: rgba(255, 255, 255, 0.08);
+    --glass-bg-2: rgba(255, 255, 255, 0.03);
+    --glass-highlight: rgba(255, 255, 255, 0.35);
+    --glass-shadow: rgba(0, 0, 0, 0.45);
+    --glass-active-bg-1: rgba(120, 130, 255, 0.35);
+    --glass-active-bg-2: rgba(59, 63, 179, 0.18);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0B0B0B;
+  --bg-soft: #161616;
+  --fg: #ECEAE3;
+  --fg-muted: #B4B0A8;
+  --fg-faint: #6E6A62;
+  --line: rgba(236, 234, 227, 0.10);
+  --accent: #3B3FB3;
+  --logo-filter: invert(1);
+
+  /* iOS Liquid Glass — тёмная тема (прозрачное матовое стекло) */
+  --glass-bg-1: rgba(255, 255, 255, 0.08);
+  --glass-bg-2: rgba(255, 255, 255, 0.03);
+  --glass-highlight: rgba(255, 255, 255, 0.35);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --glass-active-bg-1: rgba(120, 130, 255, 0.35);
+  --glass-active-bg-2: rgba(59, 63, 179, 0.18);
+}
+
+/* iOS Liquid Glass — прозрачное матовое стекло, без halo */
+.glass {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    var(--glass-bg-1) 0%,
+    var(--glass-bg-2) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: none;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 8px 24px var(--glass-shadow);
+  transition:
+    background 300ms ease,
+    box-shadow 300ms ease,
+    transform 200ms ease;
+}
+.glass:hover {
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.20),
+    0 12px 28px var(--glass-shadow);
+}
+.glass-active {
+  background: linear-gradient(
+    180deg,
+    var(--glass-active-bg-1) 0%,
+    var(--glass-active-bg-2) 100%
+  ) !important;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 8px 24px var(--glass-shadow) !important;
+}
+
+/* ─── HEADER defaults (mobile) — подобрано Славой ─── */
+:root {
+  --logo-h: 26px;
+  --header-pl: 20px;
+  --nav-size: 9px;
+  --nav-gap: 3px;
+  --toggle-scale: 0.86;
+  --header-pr: 22px;
+  --header-py: 18px;
+  --toggle-size: 10px;
+  --mobile-marquee-duration: 12s;
+}
+
+/* На десктопе header шире и крупнее */
+@media (min-width: 768px) {
+  :root {
+    --header-pl: 48px;
+    --header-pr: 48px;
+    --header-py: 32px;
+    --logo-h: 32px;
+    --nav-size: 11px;
+    --nav-gap: 28px;
+    --toggle-scale: 1;
+    --toggle-size: 11px;
+  }
+}
+
+/* ─── MOBILE HERO LAYOUT (под ≤ 767px) ─── */
+/* Подобрано Славой через HeroDevPanel на мобильном viewport. */
+@media (max-width: 767px) {
+  :root {
+    --body-right: -28.5vw;
+    --body-bottom: 11vh;
+    --body-height: 118vh;
+    --hand-right: -26.5vw;
+    --hand-bottom: 16vh;
+    --hand-width: 160vw;
+    --cam-right: -13.5vw;
+    --cam-bottom: 25.5vh;
+    --cam-width: 89vw;
+    --aura-right: -20vw;
+    --aura-bottom: -15vh;
+    --aura-size: 90vh;
+    --aura-opacity: 0.7;
+    --vignette-opacity: 0.6;
+    --tint-opacity: 0.2;
+    --caption-x: 10px;
+    --caption-y: -310px;
+    --caption-scale: 0.8;
+    --name-x: 9px;
+    --name-y: -314px;
+    --name-scale: 1.1;
+    --bio-x: 0px;
+    --bio-y: 0px;
+    --bio-scale: 1;
+    --bio-max-w: 100vw;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  scroll-behavior: auto;
+  /* Жёстко режем горизонтальный overflow на корне — чтобы fixed-хедер не сдвигался от широких аур / абсолютов */
+  overflow-x: clip;
+}
+
+/* Резервируем место под scrollbar только на десктопе (там он не overlay) —
+   чтобы хедер не «дёргался» при переходах между страницами с/без скролла. */
+@media (min-width: 768px) {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  transition: background-color 400ms ease, color 400ms ease;
+}
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Marquee — бегущая строка */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee-x var(--marquee-duration, 30s) linear infinite;
+}
+
+/* На мобиле marquee бежит заметно быстрее */
+@media (max-width: 767px) {
+  .marquee-track {
+    animation-duration: var(--mobile-marquee-duration, 12s) !important;
+  }
+}
+
+/* Утилиты */
+.text-balance { text-wrap: balance; }
+.text-pretty  { text-wrap: pretty; }
+
+/* Скрыть скроллбар, но оставить скролл (для horizontal-scroll портфолио тизера) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Картинки в lightbox / больших блоках — резкие края */
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Reduce motion — отключаем тяжёлые анимации */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .marquee-track { animation: none; }
+}
