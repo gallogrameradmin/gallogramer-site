@@ -87,7 +87,15 @@ export default function RequestForm() {
     setState("sending");
     setError("");
     try {
-      const res = await fetch("/api/contact", {
+      // YC CDN режет POST к /api/* на www.gallogramer.com → ходим напрямую
+      // в Vercel. На vercel.app и localhost используем относительный путь.
+      const base =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "www.gallogramer.com" ||
+          window.location.hostname === "gallogramer.com")
+          ? "https://gallogramer-site.vercel.app"
+          : "";
+      const res = await fetch(`${base}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
