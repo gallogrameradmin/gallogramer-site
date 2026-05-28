@@ -8,7 +8,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HeroName from "../HeroName";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -84,6 +84,69 @@ export default function HeroCinema({ reachBody, hand, camera }: Props) {
     my.set(0);
     setSpot({ x: -1000, y: -1000 });
   };
+
+  // ─── Параллакс от наклона телефона (DeviceOrientation API) ───
+  // На coarse pointer (touch) рулим теми же mx/my, что и мышь.
+  // На iOS требуется разрешение, ловим его на первый touch.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+    let baseGamma: number | null = null;
+    let baseBeta: number | null = null;
+    let attached = false;
+
+    const onOrient = (e: DeviceOrientationEvent) => {
+      const g = e.gamma ?? 0; // лево/право: -90..90
+      const b = e.beta ?? 0; // вперёд/назад: -180..180
+      if (baseGamma === null) {
+        baseGamma = g;
+        baseBeta = b;
+        return;
+      }
+      // Полный размах при ±18° отклонения от стартовой позиции
+      const dx = Math.max(-1, Math.min(1, (g - baseGamma) / 18));
+      const dy = Math.max(-1, Math.min(1, (b - (baseBeta ?? 0)) / 18));
+      mx.set(dx);
+      my.set(dy);
+    };
+
+    const attach = () => {
+      if (attached) return;
+      window.addEventListener("deviceorientation", onOrient);
+      attached = true;
+    };
+    const detach = () => {
+      if (!attached) return;
+      window.removeEventListener("deviceorientation", onOrient);
+      attached = false;
+    };
+
+    const DOE = window.DeviceOrientationEvent as unknown as
+      | { requestPermission?: () => Promise<"granted" | "denied"> }
+      | undefined;
+
+    if (DOE && typeof DOE.requestPermission === "function") {
+      // iOS 13+ — нужен user-gesture: вешаем permission-prompt на первый touch
+      const onFirstTouch = () => {
+        DOE.requestPermission!()
+          .then((res) => {
+            if (res === "granted") attach();
+          })
+          .catch(() => {});
+      };
+      document.addEventListener("touchstart", onFirstTouch, { once: true });
+      return () => {
+        document.removeEventListener("touchstart", onFirstTouch);
+        detach();
+      };
+    }
+
+    // Android / прочие — слушаем сразу, разрешение не нужно
+    attach();
+    return detach;
+  }, [mx, my]);
 
   return (
     <section
