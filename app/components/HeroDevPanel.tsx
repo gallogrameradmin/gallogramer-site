@@ -57,7 +57,7 @@ const KNOBS: Knob[] = [
   { key: "mobile-marquee-duration", label: "Marquee · duration (сек)", min: 4, max: 40, step: 0.5, suffix: "s", default: 12 },
 ];
 
-type Mode = "mobile" | "tablet" | "tablet-wide";
+type Mode = "mobile" | "tablet" | "tablet-wide" | "desktop";
 
 const MODES: Record<Mode, { storageKey: string; styleId: string; mediaQuery: string; label: string }> = {
   mobile: {
@@ -78,6 +78,12 @@ const MODES: Record<Mode, { storageKey: string; styleId: string; mediaQuery: str
     mediaQuery: "@media (min-width: 1024px) and (max-width: 1279px)",
     label: "TABLET WIDE 1024-1279px",
   },
+  desktop: {
+    storageKey: "hero-desktop-dev-knobs",
+    styleId: "hero-desktop-dev-overrides",
+    mediaQuery: "@media (min-width: 1280px)",
+    label: "DESKTOP ≥1280px",
+  },
 };
 
 function detectMode(): Mode | null {
@@ -85,7 +91,7 @@ function detectMode(): Mode | null {
   if (w < 768) return "mobile";
   if (w < 1024) return "tablet";
   if (w < 1280) return "tablet-wide";
-  return null;
+  return "desktop";
 }
 
 function defaultValues() {
@@ -116,8 +122,13 @@ function applyOverrides(mode: Mode, values: Record<string, number>) {
 }
 
 /**
- * Hero dev-панель. Видна на mobile (<768), tablet (768-1023), tablet-wide (1024-1279).
- * Каждый режим пишет в свой @media block — desktop (≥1280) не задет.
+ * Hero dev-панель. Покрывает все диапазоны:
+ *   • mobile ≤767
+ *   • tablet 768-1023
+ *   • tablet-wide 1024-1279
+ *   • desktop ≥1280
+ * Каждый режим пишет в свой @media block, значения хранятся отдельно
+ * в localStorage. Панель сама подхватывает текущий диапазон по resize.
  */
 export default function HeroDevPanel() {
   const [open, setOpen] = useState(false);
