@@ -141,20 +141,34 @@ export default function HeroDevPanel() {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<Mode | null>(null);
   const [exported, setExported] = useState<string | null>(null);
+  // true когда пользователь реально что-то крутил в этом сеансе или есть stored values.
+  // Пока false — панель НЕ пишет в <style>, чтобы не перекрывать @media из globals.css.
+  const [dirty, setDirty] = useState(false);
   // Когда true — изменение body-* двигает hand-* и cam-* на ту же дельту,
   // body-height масштабирует hand-width и cam-width пропорционально.
   const [linkLayers, setLinkLayers] = useState(false);
 
-  // При смене режима — подгружаем values из соответствующего localStorage и применяем
+  // При смене режима — подгружаем values из соответствующего localStorage.
+  // applyOverrides вызываем ТОЛЬКО если в storage что-то было (т.е. ранее тюнили).
   useEffect(() => {
     if (!mode) return;
     let v = defaultValues();
+    let hadStored = false;
     try {
       const raw = localStorage.getItem(MODES[mode].storageKey);
-      if (raw) v = { ...v, ...JSON.parse(raw) };
+      if (raw) {
+        v = { ...v, ...JSON.parse(raw) };
+        hadStored = true;
+      }
     } catch {}
     setValues(v);
-    applyOverrides(mode, v);
+    setDirty(hadStored);
+    if (hadStored) {
+      applyOverrides(mode, v);
+    } else {
+      // Чисто — убираем style-тег этого режима, чтобы globals.css работал как есть
+      document.getElementById(MODES[mode].styleId)?.remove();
+    }
   }, [mode]);
 
   // Detect mode на mount + при resize
@@ -166,18 +180,19 @@ export default function HeroDevPanel() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Persist values + apply при их изменении
+  // Persist values + apply при их изменении — ТОЛЬКО если уже dirty (юзер крутил/были сохранены)
   useEffect(() => {
-    if (!mounted || !mode) return;
+    if (!mounted || !mode || !dirty) return;
     applyOverrides(mode, values);
     try {
       localStorage.setItem(MODES[mode].storageKey, JSON.stringify(values));
     } catch {}
-  }, [values, mounted, mode]);
+  }, [values, mounted, mode, dirty]);
 
   if (!mounted || !mode) return null;
 
-  const update = (key: string, val: number) =>
+  const update = (key: string, val: number) => {
+    setDirty(true);
     setValues((v) => {
       const next: Record<string, number> = { ...v, [key]: val };
       if (linkLayers && key.startsWith("body-")) {
@@ -199,8 +214,18 @@ export default function HeroDevPanel() {
       }
       return next;
     });
+  };
 
-  const reset = () => setValues(defaultValues());
+  // Reset = убрать любые тюнинговые оверрайды, дать рулить globals.css
+  const reset = () => {
+    if (!mode) return;
+    try {
+      localStorage.removeItem(MODES[mode].storageKey);
+    } catch {}
+    document.getElementById(MODES[mode].styleId)?.remove();
+    setValues(defaultValues());
+    setDirty(false);
+  };
 
   const exportCss = () => {
     const lines = KNOBS.map((k) => {
