@@ -37,13 +37,26 @@ export async function POST(req: Request) {
     );
   }
 
-  // Чистим/нормализуем услуги — обрезаем длины, фильтруем пустые
-  const services: ServiceContent[] = c.services.map((s) => ({
-    title: String(s.title ?? "").slice(0, 60).trim(),
-    description: String(s.description ?? "").slice(0, 600).trim(),
-    photoSrc: s.photoSrc ? String(s.photoSrc).slice(0, 500) : null,
-    caseTitle: String(s.caseTitle ?? "").slice(0, 80).trim(),
-  }));
+  // Чистим/нормализуем услуги — обрезаем длины, валидируем media
+  const services: ServiceContent[] = c.services.map((s) => {
+    let media: ServiceContent["media"] = null;
+    if (s.media && typeof s.media === "object") {
+      const k = s.media.kind;
+      const src = String(s.media.src ?? "").slice(0, 500);
+      if ((k === "photo" || k === "video") && src) {
+        media = { kind: k, src };
+      }
+    } else if (s.photoSrc) {
+      // Совместимость: если пришёл старый ключ — переносим в media
+      media = { kind: "photo", src: String(s.photoSrc).slice(0, 500) };
+    }
+    return {
+      title: String(s.title ?? "").slice(0, 60).trim(),
+      description: String(s.description ?? "").slice(0, 600).trim(),
+      media,
+      caseTitle: String(s.caseTitle ?? "").slice(0, 80).trim(),
+    };
+  });
 
   const normalized: SiteContent = {
     hero: { bio: String(c.hero.bio).slice(0, 2000).trim() },

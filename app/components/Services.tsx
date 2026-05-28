@@ -20,16 +20,27 @@ export default function Services({
   const [active, setActive] = useState(0);
   const currentService = services[active] ?? null;
 
-  // Подбираем превью: сначала пробуем явно указанный photoSrc, иначе берём
-  // фото по индексу из имеющегося портфолио (циклически, чтобы всегда что-то было).
-  const currentPhoto: Photo | null = (() => {
+  // Превью: если в услуге явно задано media (фото или видео) — используем его.
+  // Иначе берём случайное фото из портфолио, чтобы карточка не пустовала.
+  type Preview =
+    | { kind: "photo"; src: string; w: number; h: number }
+    | { kind: "video"; src: string };
+
+  const currentPreview: Preview | null = (() => {
     if (!currentService) return null;
-    if (currentService.photoSrc) {
-      const explicit = photos.find((p) => p.src === currentService.photoSrc);
-      if (explicit) return explicit;
+    const m = currentService.media;
+    if (m?.kind === "video" && m.src) {
+      return { kind: "video", src: m.src };
+    }
+    if (m?.kind === "photo" && m.src) {
+      const found = photos.find((p) => p.src === m.src);
+      if (found) return { kind: "photo", src: found.src, w: found.w, h: found.h };
+      // Если фото удалили из портфолио — всё равно покажем по URL
+      return { kind: "photo", src: m.src, w: 3, h: 4 };
     }
     if (photos.length === 0) return null;
-    return photos[(active * 13) % photos.length];
+    const auto = photos[(active * 13) % photos.length];
+    return { kind: "photo", src: auto.src, w: auto.w, h: auto.h };
   })();
 
   return (
@@ -79,16 +90,32 @@ export default function Services({
                   className="group relative"
                 >
                   <div className="relative aspect-[3/4] overflow-hidden bg-bg-soft">
-                    {currentPhoto ? (
+                    {currentPreview?.kind === "photo" ? (
                       <Image
-                        src={currentPhoto.src}
+                        src={currentPreview.src}
                         alt=""
                         fill
                         sizes="(min-width: 1024px) 22vw, (min-width: 768px) 33vw, 100vw"
                         className="object-cover"
                       />
+                    ) : currentPreview?.kind === "video" ? (
+                      <video
+                        key={currentPreview.src}
+                        src={currentPreview.src}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
                     ) : null}
                     <div className="absolute inset-0 ring-1 ring-inset ring-fg/[0.08] pointer-events-none" />
+                    {currentPreview?.kind === "video" ? (
+                      <div className="absolute top-2 right-2 text-[9px] font-mono tracking-[0.18em] uppercase bg-accent text-white px-2 py-1 pointer-events-none">
+                        video
+                      </div>
+                    ) : null}
                   </div>
                   <p className="mt-4 text-base text-fg font-display tracking-[-0.01em]">
                     «{services[active].caseTitle}»

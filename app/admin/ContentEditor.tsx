@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
   ServiceContent,
+  ServiceMedia,
   SiteContent,
 } from "@/app/lib/content-source";
 
@@ -20,7 +21,7 @@ export default function ContentEditor({
   apiBase: string;
 }) {
   const [content, setContent] = useState<SiteContent | null>(null);
-  const [photos, setPhotos] = useState<MediaItem[]>([]);
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string>("");
@@ -37,9 +38,7 @@ export default function ContentEditor({
         }).then((r) => r.json()),
       ]);
       setContent(c as SiteContent);
-      setPhotos(
-        ((l.items ?? []) as MediaItem[]).filter((i) => i.kind === "photo"),
-      );
+      setMedia((l.items ?? []) as MediaItem[]);
     } catch (err) {
       setStatus(`Ошибка загрузки: ${err}`);
     } finally {
@@ -145,7 +144,7 @@ export default function ContentEditor({
               key={i}
               index={i}
               service={s}
-              photos={photos}
+              media={media}
               onChange={(patch) => updateService(i, patch)}
             />
           ))}
@@ -177,16 +176,18 @@ export default function ContentEditor({
 function ServiceForm({
   index,
   service,
-  photos,
+  media,
   onChange,
 }: {
   index: number;
   service: ServiceContent;
-  photos: MediaItem[];
+  media: MediaItem[];
   onChange: (patch: Partial<ServiceContent>) => void;
 }) {
   // Найти текущее превью в списке
-  const selected = photos.find((p) => p.url === service.photoSrc) ?? null;
+  const selected = service.media
+    ? (media.find((m) => m.url === service.media!.src) ?? null)
+    : null;
 
   return (
     <div className="glass rounded-2xl p-5 md:p-6 flex flex-col gap-4">
@@ -221,26 +222,38 @@ function ServiceForm({
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        {/* Превью-фото */}
+        {/* Превью — фото или видео */}
         <div>
           <label className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-2 block">
-            Превью (фото из портфолио)
+            Превью (фото или видео из портфолио)
           </label>
-          <PhotoPicker
-            photos={photos}
-            value={service.photoSrc}
-            onChange={(src) => onChange({ photoSrc: src })}
+          <MediaPicker
+            media={media}
+            value={service.media}
+            onChange={(m) => onChange({ media: m })}
           />
           {selected ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={selected.url}
-              alt=""
-              className="mt-2 w-full h-32 object-cover rounded-lg bg-bg-soft"
-            />
+            selected.kind === "photo" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selected.url}
+                alt=""
+                className="mt-2 w-full h-32 object-cover rounded-lg bg-bg-soft"
+              />
+            ) : (
+              <video
+                src={selected.url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="mt-2 w-full h-32 object-cover rounded-lg bg-bg-soft"
+              />
+            )
           ) : (
             <p className="mt-2 text-[10px] font-mono text-fg-faint">
-              Не выбрано — сайт возьмёт случайное из портфолио
+              Не выбрано — сайт возьмёт случайное фото из портфолио
             </p>
           )}
         </div>
@@ -264,27 +277,59 @@ function ServiceForm({
   );
 }
 
-function PhotoPicker({
-  photos,
+function MediaPicker({
+  media,
   value,
   onChange,
 }: {
-  photos: MediaItem[];
-  value: string | null;
-  onChange: (src: string | null) => void;
+  media: MediaItem[];
+  value: ServiceMedia | null;
+  onChange: (m: ServiceMedia | null) => void;
 }) {
+  const photos = media.filter((m) => m.kind === "photo");
+  const videos = media.filter((m) => m.kind === "video");
+
+  // Селектная value: пустая = авто, иначе "kind:::url"
+  const currentValue = value ? `${value.kind}:::${value.src}` : "";
+
+  const handle = (raw: string) => {
+    if (!raw) {
+      onChange(null);
+      return;
+    }
+    const [kind, src] = raw.split(":::");
+    if ((kind === "photo" || kind === "video") && src) {
+      onChange({ kind, src });
+    }
+  };
+
   return (
     <select
-      value={value ?? ""}
-      onChange={(e) => onChange(e.target.value || null)}
+      value={currentValue}
+      onChange={(e) => handle(e.target.value)}
       className="w-full bg-bg-soft text-fg text-sm font-mono p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
     >
-      <option value="">— Авто (любое из портфолио) —</option>
-      {photos.map((p) => (
-        <option key={p.key} value={p.url}>
-          {p.key}
-        </option>
-      ))}
+      <option value="">— Авто (случайное фото из портфолио) —</option>
+
+      {photos.length > 0 ? (
+        <optgroup label="📷 Фото">
+          {photos.map((p) => (
+            <option key={p.key} value={`photo:::${p.url}`}>
+              {p.key}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
+
+      {videos.length > 0 ? (
+        <optgroup label="🎥 Видео">
+          {videos.map((v) => (
+            <option key={v.key} value={`video:::${v.url}`}>
+              {v.key}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
     </select>
   );
 }
