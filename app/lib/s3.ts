@@ -25,22 +25,29 @@ export const STATE_KEY = "_state/bot.json";
 export const PHOTOS_MANIFEST_KEY = "manifest.json";
 export const VIDEOS_MANIFEST_KEY = "manifest.json";
 
+// Выделенный YC CDN-ресурс для видео и видеообложек (bc8rgs5kpqyvr55zegry).
+// Origin: storage.yandexcloud.net с rewrite /<key> → /gallogramer-videos/<key>
+// + host_options.host = storage.yandexcloud.net (это поле настраивается
+// только через консоль YC, REST API его молча игнорирует).
+const VIDEO_CDN = "https://video.gallogramer.com";
+
 /**
  * Публичный URL для медиа.
  *
  * Фото идут через /media/photos/<key> — Next.js rewrite проксирует на S3,
  * Next/Image оптимизирует и кэширует. Range-запросы не нужны.
  *
- * Видео идут напрямую в YC Object Storage. Vercel rewrite ломался на
- * byte-range крупных файлов (двойной Content-Range), а свой YC CDN-ресурс
- * video.gallogramer.com создан (id bc8rgs5kpqyvr55zegry), но REST API не
- * принимает options.hostOptions через PATCH — без подмены Host на
- * storage.yandexcloud.net origin отвечает NoSuchBucket. До ручной настройки
- * host_options в консоли YC видео остаются на прямом Storage-URL.
+ * Видео и видеообложки (thumbs/<base>.jpg) идут через выделенный YC CDN —
+ * российские эджи кэшируют 24ч (edgeCacheSettings=86400), byte-range
+ * полностью работает (в отличие от Vercel rewrite, который чанкует крупные
+ * файлы и портит Content-Range).
  */
 export function publicUrl(bucket: string, key: string) {
   if (bucket === PHOTOS_BUCKET) {
     return `/media/photos/${encodeURIComponent(key)}`;
+  }
+  if (bucket === VIDEOS_BUCKET) {
+    return `${VIDEO_CDN}/${encodeURIComponent(key)}`;
   }
   return directObjectUrl(bucket, key);
 }

@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: "storage.yandexcloud.net",
         pathname: "/gallogramer-videos/**",
       },
+      {
+        protocol: "https",
+        hostname: "video.gallogramer.com",
+        pathname: "/**",
+      },
     ],
   },
   // Прокси медиа через свой домен → попадает в YC CDN-кэш на российских эджах.
