@@ -255,6 +255,39 @@ function AuthedAdmin({
         } catch {}
       }
 
+      // 3.5. Для видео — извлекаем первый кадр в JPEG и заливаем как thumbnail.
+      // Иначе на мобильных preload=metadata режется и превью видео не показывается.
+      if (kind === "video") {
+        try {
+          const thumbBlob = await generateVideoThumb(file);
+          if (thumbBlob) {
+            const thumbSign = await fetch(
+              `${apiBase()}/api/admin/sign-thumb`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ videoKey: key }),
+              },
+            );
+            if (thumbSign.ok) {
+              const { url: thumbUrl } = (await thumbSign.json()) as {
+                url: string;
+              };
+              await fetch(thumbUrl, {
+                method: "PUT",
+                body: thumbBlob,
+                headers: { "Content-Type": "image/jpeg" },
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("[upload] thumb generation/upload failed:", err);
+        }
+      }
+
       // 4. Финализация → регенерация манифеста
       const finResp = await fetch(`${apiBase()}/api/admin/finalize`, {
         method: "POST",
@@ -609,5 +642,68 @@ function readVideoDimensions(
       reject(e);
     };
     v.src = url;
+  });
+}
+
+/**
+ * Извлекает кадр из видео через canvas и возвращает JPEG Blob.
+ * Используется как thumbnail для превьюшек на портфолио (особенно на мобильных,
+ * где preload="metadata" режется браузером и первый кадр не показывается).
+ */
+function generateVideoThumb(file: File): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+
+    let resolved = false;
+    const finish = (blob: Blob | null) => {
+      if (resolved) return;
+      resolved = true;
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+      resolve(blob);
+    };
+
+    video.onloadedmetadata = () => {
+      // Берём кадр на 1-й секунде или 10% длины — что меньше
+      const target = Math.min(1, (video.duration || 1) * 0.1);
+      try {
+        video.currentTime = target;
+      } catch {
+        finish(null);
+      }
+    };
+
+    video.onseeked = () => {
+      try {
+        const maxW = 1280;
+        const scale = Math.min(1, maxW / (video.videoWidth || maxW));
+        const w = Math.max(1, Math.round((video.videoWidth || 1280) * scale));
+        const h = Math.max(1, Math.round((video.videoHeight || 720) * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          finish(null);
+          return;
+        }
+        ctx.drawImage(video, 0, 0, w, h);
+        canvas.toBlob((blob) => finish(blob), "image/jpeg", 0.82);
+      } catch {
+        finish(null);
+      }
+    };
+
+    video.onerror = () => finish(null);
+    // Защита от зависания
+    setTimeout(() => finish(null), 20000);
+
+    video.src = url;
   });
 }
