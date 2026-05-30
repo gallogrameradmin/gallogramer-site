@@ -26,16 +26,23 @@ export const PHOTOS_MANIFEST_KEY = "manifest.json";
 export const VIDEOS_MANIFEST_KEY = "manifest.json";
 
 /**
- * Публичный URL для медиа — через /media/{photos,videos}/<key> на нашем домене.
- * Это идёт через YC CDN (быстрый кэш на российских эджах), Next.js rewrite
- * проксирует на storage.yandexcloud.net.
+ * Публичный URL для медиа.
  *
- * Для прямого доступа к объекту (например, в админ-скриптах) есть directObjectUrl().
+ * Фото идут через /media/photos/<key> — Next.js rewrite проксирует на S3,
+ * Next/Image оптимизирует и кэширует. Range-запросы не нужны.
+ *
+ * Видео идут НАПРЯМУЮ с storage.yandexcloud.net. Vercel rewrite для видео
+ * сломан: он чанкует по 10 MB и портит Content-Range заголовок при
+ * byte-range запросах → браузер не может стримить. Прямой URL на YC Storage
+ * работает корректно (ru-central1 быстро отдаёт из РФ).
  */
 export function publicUrl(bucket: string, key: string) {
-  const safeKey = encodeURIComponent(key);
-  if (bucket === PHOTOS_BUCKET) return `/media/photos/${safeKey}`;
-  if (bucket === VIDEOS_BUCKET) return `/media/videos/${safeKey}`;
+  if (bucket === PHOTOS_BUCKET) {
+    return `/media/photos/${encodeURIComponent(key)}`;
+  }
+  if (bucket === VIDEOS_BUCKET) {
+    return directObjectUrl(bucket, key);
+  }
   return directObjectUrl(bucket, key);
 }
 
