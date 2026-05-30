@@ -45,6 +45,11 @@ export async function POST(req: Request) {
       const src = String(s.media.src ?? "").slice(0, 500);
       if ((k === "photo" || k === "video") && src) {
         media = { kind: k, src };
+        // poster только для видео
+        if (k === "video" && typeof s.media.poster === "string") {
+          const poster = s.media.poster.slice(0, 500).trim();
+          if (poster) media.poster = poster;
+        }
       }
     } else if (s.photoSrc) {
       // Совместимость: если пришёл старый ключ — переносим в media

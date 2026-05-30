@@ -243,6 +243,7 @@ function ServiceForm({
             ) : (
               <video
                 src={selected.url}
+                poster={service.media?.poster || undefined}
                 autoPlay
                 muted
                 loop
@@ -273,6 +274,69 @@ function ServiceForm({
           />
         </div>
       </div>
+
+      {/* Постер/обложка — только когда выбрано видео */}
+      {service.media?.kind === "video" ? (
+        <div>
+          <label className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-2 block">
+            Обложка видео (фото-постер до старта)
+          </label>
+          <PosterPicker
+            photos={media.filter((m) => m.kind === "photo")}
+            value={service.media.poster ?? ""}
+            onChange={(poster) =>
+              onChange({
+                media: service.media
+                  ? {
+                      kind: "video",
+                      src: service.media.src,
+                      ...(poster ? { poster } : {}),
+                    }
+                  : service.media,
+              })
+            }
+          />
+          <p className="mt-1 text-[10px] font-mono text-fg-faint">
+            Показывается пока видео грузится. Если пусто — берётся
+            авто-превью, сгенерированное при загрузке видео.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PosterPicker({
+  photos,
+  value,
+  onChange,
+}: {
+  photos: MediaItem[];
+  value: string;
+  onChange: (poster: string) => void;
+}) {
+  return (
+    <div className="flex gap-3 items-start">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex-1 bg-bg-soft text-fg text-sm font-mono p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+      >
+        <option value="">— Авто (canvas-превью видео) —</option>
+        {photos.map((p) => (
+          <option key={p.key} value={p.url}>
+            {p.key}
+          </option>
+        ))}
+      </select>
+      {value ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={value}
+          alt=""
+          className="w-20 h-20 object-cover rounded-lg bg-bg-soft border border-line"
+        />
+      ) : null}
     </div>
   );
 }

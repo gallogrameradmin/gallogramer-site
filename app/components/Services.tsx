@@ -24,13 +24,13 @@ export default function Services({
   // Иначе берём случайное фото из портфолио, чтобы карточка не пустовала.
   type Preview =
     | { kind: "photo"; src: string; w: number; h: number }
-    | { kind: "video"; src: string };
+    | { kind: "video"; src: string; poster?: string };
 
   const currentPreview: Preview | null = (() => {
     if (!currentService) return null;
     const m = currentService.media;
     if (m?.kind === "video" && m.src) {
-      return { kind: "video", src: m.src };
+      return { kind: "video", src: m.src, poster: m.poster };
     }
     if (m?.kind === "photo" && m.src) {
       const found = photos.find((p) => p.src === m.src);
@@ -102,6 +102,7 @@ export default function Services({
                       <video
                         key={currentPreview.src}
                         src={currentPreview.src}
+                        poster={currentPreview.poster || undefined}
                         autoPlay
                         muted
                         loop

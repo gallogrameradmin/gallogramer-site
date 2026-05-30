@@ -9,6 +9,13 @@ export const CONTENT_KEY = "_content/site.json";
 export type ServiceMedia = {
   kind: "photo" | "video";
   src: string;
+  /**
+   * Постер для видео (URL фото). Используется как HTML5 <video poster="...">,
+   * показывается до момента когда видео реально начнёт играть. Если не задан,
+   * автоматически берётся canvas-thumbnail сгенерированный при загрузке
+   * (thumbs/<base>.jpg в bucket видео). Для kind=photo игнорируется.
+   */
+  poster?: string;
 };
 
 export type ServiceContent = {
