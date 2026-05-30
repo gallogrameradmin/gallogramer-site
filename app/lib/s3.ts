@@ -31,17 +31,16 @@ export const VIDEOS_MANIFEST_KEY = "manifest.json";
  * Фото идут через /media/photos/<key> — Next.js rewrite проксирует на S3,
  * Next/Image оптимизирует и кэширует. Range-запросы не нужны.
  *
- * Видео идут НАПРЯМУЮ с storage.yandexcloud.net. Vercel rewrite для видео
- * сломан: он чанкует по 10 MB и портит Content-Range заголовок при
- * byte-range запросах → браузер не может стримить. Прямой URL на YC Storage
- * работает корректно (ru-central1 быстро отдаёт из РФ).
+ * Видео идут напрямую в YC Object Storage. Vercel rewrite ломался на
+ * byte-range крупных файлов (двойной Content-Range), а свой YC CDN-ресурс
+ * video.gallogramer.com создан (id bc8rgs5kpqyvr55zegry), но REST API не
+ * принимает options.hostOptions через PATCH — без подмены Host на
+ * storage.yandexcloud.net origin отвечает NoSuchBucket. До ручной настройки
+ * host_options в консоли YC видео остаются на прямом Storage-URL.
  */
 export function publicUrl(bucket: string, key: string) {
   if (bucket === PHOTOS_BUCKET) {
     return `/media/photos/${encodeURIComponent(key)}`;
-  }
-  if (bucket === VIDEOS_BUCKET) {
-    return directObjectUrl(bucket, key);
   }
   return directObjectUrl(bucket, key);
 }
