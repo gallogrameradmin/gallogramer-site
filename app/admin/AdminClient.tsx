@@ -57,6 +57,8 @@ type MediaItem = {
   url: string;
   mtimeMs: number;
   ago: string;
+  /** Только для video — URL текущей обложки thumbs/<base>.jpg, если есть */
+  thumbUrl?: string | null;
 };
 
 type UploadState = {
@@ -163,6 +165,8 @@ function AuthedAdmin({
   const [loading, setLoading] = useState(true);
   const [uploads, setUploads] = useState<UploadState[]>([]);
   const [pendingDelete, setPendingDelete] = useState<MediaItem | null>(null);
+  const [posterTarget, setPosterTarget] = useState<MediaItem | null>(null);
+  const [posterSaving, setPosterSaving] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -322,6 +326,37 @@ function AuthedAdmin({
     setTimeout(() => {
       setUploads((prev) => prev.filter((u) => !u.done && !u.error));
     }, 3000);
+  };
+
+  const setVideoPoster = async (
+    video: MediaItem,
+    photoKey: string | null,
+  ) => {
+    setPosterSaving(true);
+    try {
+      const r = await fetch(`${apiBase()}/api/admin/set-video-poster`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          videoKey: video.key,
+          photoKey: photoKey ?? "",
+        }),
+      });
+      if (!r.ok) {
+        const j = (await r.json().catch(() => ({}))) as { error?: string };
+        alert(j.error ?? `Ошибка ${r.status}`);
+        return;
+      }
+      await fetchList();
+      setPosterTarget(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Сеть недоступна");
+    } finally {
+      setPosterSaving(false);
+    }
   };
 
   const doDelete = async () => {
@@ -510,6 +545,9 @@ function AuthedAdmin({
               key={it.key}
               item={it}
               onDelete={() => setPendingDelete(it)}
+              onPickPoster={
+                it.kind === "video" ? () => setPosterTarget(it) : undefined
+              }
             />
           ))}
         </div>
@@ -550,6 +588,17 @@ function AuthedAdmin({
           </div>
         </div>
       ) : null}
+
+      {/* Модалка выбора обложки для видео */}
+      {posterTarget ? (
+        <PosterPickerModal
+          video={posterTarget}
+          photos={items.filter((m) => m.kind === "photo")}
+          saving={posterSaving}
+          onClose={() => setPosterTarget(null)}
+          onPick={(photoKey) => setVideoPoster(posterTarget, photoKey)}
+        />
+      ) : null}
       </>}
     </div>
   );
@@ -558,9 +607,11 @@ function AuthedAdmin({
 function MediaCard({
   item,
   onDelete,
+  onPickPoster,
 }: {
   item: MediaItem;
   onDelete: () => void;
+  onPickPoster?: () => void;
 }) {
   return (
     <div className="group relative bg-bg-soft aspect-[3/4] overflow-hidden">
@@ -568,6 +619,15 @@ function MediaCard({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={item.url}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : item.thumbUrl ? (
+        // Если у видео есть обложка — показываем её (быстрее, нагляднее).
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.thumbUrl}
           alt=""
           loading="lazy"
           className="absolute inset-0 w-full h-full object-cover"
@@ -592,15 +652,144 @@ function MediaCard({
         {item.ago}
       </div>
 
-      {/* Кнопка удаления */}
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="Удалить"
-        className="absolute top-2 right-2 bg-bg/90 hover:bg-red-500 hover:text-white text-fg text-sm h-7 w-7 rounded flex items-center justify-center transition-colors"
+      {/* Действия в правом верхнем углу */}
+      <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label="Удалить"
+          className="bg-bg/90 hover:bg-red-500 hover:text-white text-fg text-sm h-7 w-7 rounded flex items-center justify-center transition-colors"
+        >
+          ✕
+        </button>
+        {onPickPoster ? (
+          <button
+            type="button"
+            onClick={onPickPoster}
+            aria-label="Изменить обложку"
+            title={item.thumbUrl ? "Сменить обложку" : "Назначить обложку"}
+            className="bg-bg/90 hover:bg-accent hover:text-white text-fg text-xs h-7 w-7 rounded flex items-center justify-center transition-colors"
+          >
+            🖼
+          </button>
+        ) : null}
+      </div>
+
+      {/* Индикатор кастомной обложки */}
+      {item.kind === "video" && item.thumbUrl ? (
+        <div className="absolute bottom-2 right-2 text-[9px] font-mono tracking-[0.12em] uppercase bg-accent text-white px-1.5 py-0.5 rounded">
+          poster
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PosterPickerModal({
+  video,
+  photos,
+  saving,
+  onClose,
+  onPick,
+}: {
+  video: MediaItem;
+  photos: MediaItem[];
+  saving: boolean;
+  onClose: () => void;
+  onPick: (photoKey: string | null) => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[90] bg-bg/90 backdrop-blur-sm flex items-center justify-center px-4 py-6"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-bg-soft border border-line rounded-2xl p-5 md:p-6 max-w-3xl w-full max-h-[90vh] flex flex-col"
       >
-        ✕
-      </button>
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <div>
+            <p className="text-[10px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-1">
+              Обложка для видео
+            </p>
+            <p className="font-mono text-xs text-fg break-all">{video.key}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-fg-faint hover:text-fg text-xl leading-none px-2"
+            aria-label="Закрыть"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="text-[11px] font-mono text-fg-faint mb-4">
+          Выбери любое фото из галереи — оно станет постером в галерее
+          портфолио и в лайтбоксе. Это перепишет авто-превью, если оно было.
+        </p>
+
+        {video.thumbUrl ? (
+          <div className="mb-4 flex items-center gap-3">
+            <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-faint">
+              Сейчас:
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={video.thumbUrl}
+              alt=""
+              className="w-16 h-16 object-cover rounded border border-line"
+            />
+            <button
+              type="button"
+              onClick={() => onPick(null)}
+              disabled={saving}
+              className="ml-auto text-[11px] font-mono uppercase tracking-[0.14em] text-red-400 hover:text-red-300 px-3 py-2 transition-colors disabled:opacity-50"
+            >
+              Сбросить
+            </button>
+          </div>
+        ) : null}
+
+        <div className="overflow-y-auto flex-1 -mx-1 px-1">
+          {photos.length === 0 ? (
+            <div className="py-16 text-center font-mono text-sm text-fg-faint">
+              В галерее ещё нет фото. Сначала загрузи фотографии.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {photos.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => onPick(p.key)}
+                  disabled={saving}
+                  className="group relative aspect-[3/4] bg-bg overflow-hidden border border-line hover:border-accent transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.url}
+                    alt=""
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-colors">
+                    <span className="opacity-0 group-hover:opacity-100 text-[10px] font-mono uppercase tracking-[0.14em] text-white bg-accent px-2 py-1 rounded transition-opacity">
+                      Выбрать
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {saving ? (
+          <div className="mt-4 text-center text-[11px] font-mono uppercase tracking-[0.14em] text-fg-faint">
+            Сохраняем обложку…
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
