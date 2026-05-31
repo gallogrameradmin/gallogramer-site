@@ -2,6 +2,7 @@ import Hero from "./components/Hero";
 import Marquee from "./components/Marquee";
 import Featured from "./components/Featured";
 import Services from "./components/Services";
+import Pricing from "./components/Pricing";
 import Footer from "./components/Footer";
 import { getPhotos } from "./lib/photos-source";
 import { getContent } from "./lib/content-source";
@@ -19,6 +20,7 @@ export default async function Home() {
         speed={50}
       />
       <Services photos={photos} services={content.services} />
+      <Pricing pricing={content.pricing} />
       <Featured photos={photos} />
       <Footer />
     </main>

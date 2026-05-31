@@ -5,6 +5,7 @@ import {
   putContent,
   type SiteContent,
   type ServiceContent,
+  type PricingItem,
 } from "@/app/lib/content-source";
 
 export async function GET(req: Request) {
@@ -63,9 +64,24 @@ export async function POST(req: Request) {
     };
   });
 
+  // Прайс — массив тарифов. Пустой массив = блок не показывается на сайте.
+  const pricing: PricingItem[] = Array.isArray(c.pricing)
+    ? c.pricing
+        .map((p) => ({
+          title: String(p?.title ?? "").slice(0, 80).trim(),
+          description: String(p?.description ?? "").slice(0, 200).trim(),
+          price: String(p?.price ?? "").slice(0, 60).trim(),
+          unit: String(p?.unit ?? "").slice(0, 40).trim(),
+          highlight: Boolean(p?.highlight),
+        }))
+        // Игнорируем тарифы без заголовка и без цены — это «пустые строки»
+        .filter((p) => p.title && p.price)
+    : [];
+
   const normalized: SiteContent = {
     hero: { bio: String(c.hero.bio).slice(0, 2000).trim() },
     services,
+    pricing,
   };
 
   try {

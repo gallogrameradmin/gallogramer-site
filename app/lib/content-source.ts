@@ -29,11 +29,25 @@ export type ServiceContent = {
   photoSrc?: string | null;
 };
 
+export type PricingItem = {
+  /** Название тарифа — «Репортаж», «Портрет 1.5 часа» и т.п. */
+  title: string;
+  /** Краткое описание что входит — одна строка, до 200 символов */
+  description: string;
+  /** Цена строкой — «от 8 000 ₽», «договорная», «25 000 ₽ – 50 000 ₽» */
+  price: string;
+  /** Единица — «за час», «за съёмку», «за ролик». Опционально. */
+  unit: string;
+  /** Выделить тариф (популярный — рамка-акцент) */
+  highlight: boolean;
+};
+
 export type SiteContent = {
   hero: {
     bio: string;
   };
   services: ServiceContent[];
+  pricing: PricingItem[];
 };
 
 /**
@@ -89,6 +103,52 @@ export const DEFAULT_CONTENT: SiteContent = {
       caseTitle: "Подкаст-интервью",
     },
   ],
+  // Дефолтные цены — заглушки, корректируются через админ-панель.
+  // Тариф с highlight=true визуально выделяется (акцентная рамка).
+  pricing: [
+    {
+      title: "Репортаж",
+      description: "Концерты, вечеринки, корпоративы. 60–200 кадров.",
+      price: "от 6 000 ₽",
+      unit: "за час",
+      highlight: false,
+    },
+    {
+      title: "Портрет",
+      description: "Студия или локация. 20–40 ретушированных кадров.",
+      price: "12 000 ₽",
+      unit: "за съёмку",
+      highlight: true,
+    },
+    {
+      title: "Reels / Короткие ролики",
+      description: "Съёмка + монтаж + музыка под ключ. До 60 секунд.",
+      price: "от 15 000 ₽",
+      unit: "за ролик",
+      highlight: false,
+    },
+    {
+      title: "Лукбук / Коммерция",
+      description: "Серия для бренда. Студия, локация, ретушь в едином ключе.",
+      price: "по запросу",
+      unit: "",
+      highlight: false,
+    },
+    {
+      title: "Backstage",
+      description: "Закулисье съёмок, репетиций. Не вмешиваюсь в процесс.",
+      price: "от 4 000 ₽",
+      unit: "за час",
+      highlight: false,
+    },
+    {
+      title: "Интервью / Подкаст",
+      description: "2-3 камеры, чистый звук, чистовой монтаж.",
+      price: "от 25 000 ₽",
+      unit: "за смену",
+      highlight: false,
+    },
+  ],
 };
 
 /**
@@ -114,9 +174,14 @@ export async function getContent(): Promise<SiteContent> {
       raw.services && raw.services.length > 0
         ? (raw.services as ServiceContent[]).map(migrateService)
         : DEFAULT_CONTENT.services;
+    // Прайс — если массива нет в S3-JSON (старый формат) — берём дефолтный.
+    // Пустой массив [] оставляем как есть: пользователь явно скрыл блок.
+    const pricing =
+      Array.isArray(raw.pricing) ? raw.pricing : DEFAULT_CONTENT.pricing;
     return {
       hero: { ...DEFAULT_CONTENT.hero, ...(raw.hero ?? {}) },
       services,
+      pricing,
     };
   } catch (err) {
     console.error("[content-source] getContent failed:", err);

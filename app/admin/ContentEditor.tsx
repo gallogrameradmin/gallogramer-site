@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type {
+  PricingItem,
   ServiceContent,
   ServiceMedia,
   SiteContent,
@@ -60,6 +61,47 @@ export default function ContentEditor({
     const next = [...content.services];
     next[i] = { ...next[i], ...patch };
     setContent({ ...content, services: next });
+  };
+
+  const updatePricing = (i: number, patch: Partial<PricingItem>) => {
+    if (!content) return;
+    const next = [...content.pricing];
+    next[i] = { ...next[i], ...patch };
+    setContent({ ...content, pricing: next });
+  };
+
+  const addPricing = () => {
+    if (!content) return;
+    setContent({
+      ...content,
+      pricing: [
+        ...content.pricing,
+        {
+          title: "",
+          description: "",
+          price: "",
+          unit: "",
+          highlight: false,
+        },
+      ],
+    });
+  };
+
+  const removePricing = (i: number) => {
+    if (!content) return;
+    setContent({
+      ...content,
+      pricing: content.pricing.filter((_, idx) => idx !== i),
+    });
+  };
+
+  const movePricing = (i: number, delta: -1 | 1) => {
+    if (!content) return;
+    const j = i + delta;
+    if (j < 0 || j >= content.pricing.length) return;
+    const next = [...content.pricing];
+    [next[i], next[j]] = [next[j], next[i]];
+    setContent({ ...content, pricing: next });
   };
 
   const save = async () => {
@@ -126,6 +168,45 @@ export default function ContentEditor({
         <p className="text-[10px] font-mono text-fg-faint mt-1 text-right">
           {content.hero.bio.length} / 2000
         </p>
+      </section>
+
+      {/* Прайс-лист */}
+      <section>
+        <div className="flex items-baseline justify-between gap-3 mb-1">
+          <h2 className="font-display text-xl md:text-2xl">
+            Прайс<span className="text-accent">.</span>
+          </h2>
+          <span className="text-[10px] font-mono tracking-[0.14em] uppercase text-fg-faint">
+            {content.pricing.length} тарифов
+          </span>
+        </div>
+        <p className="text-[11px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-5">
+          Блок «Прайс» на главной. Если оставить пустым — блок скрыт. Карточку
+          с «выделить» — выделяет акцентной рамкой.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {content.pricing.map((p, i) => (
+            <PricingForm
+              key={i}
+              index={i}
+              total={content.pricing.length}
+              item={p}
+              onChange={(patch) => updatePricing(i, patch)}
+              onRemove={() => removePricing(i)}
+              onMoveUp={() => movePricing(i, -1)}
+              onMoveDown={() => movePricing(i, 1)}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={addPricing}
+          className="mt-4 w-full glass rounded-xl py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-faint hover:text-accent transition-colors"
+        >
+          + Добавить тариф
+        </button>
       </section>
 
       {/* Услуги */}
@@ -302,6 +383,108 @@ function ServiceForm({
           </p>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function PricingForm({
+  index,
+  total,
+  item,
+  onChange,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: {
+  index: number;
+  total: number;
+  item: PricingItem;
+  onChange: (patch: Partial<PricingItem>) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
+  return (
+    <div className="glass rounded-2xl p-4 md:p-5 flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-faint shrink-0">
+          /00{index + 1}
+        </span>
+        <input
+          type="text"
+          value={item.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+          maxLength={80}
+          placeholder="Название тарифа (Репортаж, Reels…)"
+          className="flex-1 bg-transparent text-base md:text-lg text-fg border-b border-line focus:border-accent focus:outline-none pb-1"
+        />
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={index === 0}
+            aria-label="Поднять"
+            className="text-fg-faint hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed w-7 h-7 flex items-center justify-center text-base"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+            aria-label="Опустить"
+            className="text-fg-faint hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed w-7 h-7 flex items-center justify-center text-base"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Удалить"
+            className="text-fg-faint hover:text-red-500 w-7 h-7 flex items-center justify-center text-sm transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <textarea
+        value={item.description}
+        onChange={(e) => onChange({ description: e.target.value })}
+        rows={2}
+        maxLength={200}
+        placeholder="Что входит (одна-две строки)"
+        className="w-full bg-bg-soft text-fg text-sm p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors resize-y"
+      />
+
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          type="text"
+          value={item.price}
+          onChange={(e) => onChange({ price: e.target.value })}
+          maxLength={60}
+          placeholder="Цена («от 12 000 ₽», «по запросу»)"
+          className="bg-bg-soft text-fg font-mono text-sm p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+        />
+        <input
+          type="text"
+          value={item.unit}
+          onChange={(e) => onChange({ unit: e.target.value })}
+          maxLength={40}
+          placeholder="Единица («за час», «за съёмку»)"
+          className="bg-bg-soft text-fg font-mono text-sm p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+        />
+      </div>
+
+      <label className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.14em] text-fg-muted cursor-pointer w-fit">
+        <input
+          type="checkbox"
+          checked={item.highlight}
+          onChange={(e) => onChange({ highlight: e.target.checked })}
+          className="accent-accent"
+        />
+        Выделить как «выбор» (акцентная рамка + бейдж)
+      </label>
     </div>
   );
 }
