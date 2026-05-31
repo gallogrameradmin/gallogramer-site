@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { FillSubmit } from "./FillButton";
 import ButtonAura from "./ButtonAura";
@@ -29,6 +30,15 @@ export default function RequestForm() {
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  // Префилл из ?service=<title> — пользователь кликнул карточку прайса.
+  // Слайсим до 80 символов: даже если кто-то руками впишет монструозный
+  // query — textarea не загадим.
+  const searchParams = useSearchParams();
+  const serviceParam = searchParams?.get("service")?.slice(0, 80) ?? "";
+  const messagePrefill = serviceParam
+    ? `Интересует тариф «${serviceParam}». `
+    : "";
 
   const currentMethod = methods.find((m) => m.id === method)!;
 
@@ -270,6 +280,8 @@ export default function RequestForm() {
             </span>
             <textarea
               name="message"
+              key={messagePrefill /* пересоздать textarea при смене ?service= */}
+              defaultValue={messagePrefill}
               rows={5}
               placeholder="Тип съёмки (репортаж/портрет/видео), даты, локация, бюджет, ссылка на референс…"
               aria-invalid={!!fieldErrors.message}
