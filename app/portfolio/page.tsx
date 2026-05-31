@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PortfolioGrid from "../components/PortfolioGrid";
 import Footer from "../components/Footer";
 import { getPhotos, getVideos } from "../lib/photos-source";
+import { getContent } from "../lib/content-source";
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -12,11 +13,15 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function PortfolioPage() {
-  const [photos, videos] = await Promise.all([getPhotos(), getVideos()]);
+  const [photos, videos, content] = await Promise.all([
+    getPhotos(),
+    getVideos(),
+    getContent(),
+  ]);
   return (
     <main>
       <PortfolioGrid photos={photos} videos={videos} />
-      <Footer />
+      <Footer socials={content.socials} />
     </main>
   );
 }

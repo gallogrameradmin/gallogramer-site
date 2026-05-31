@@ -6,6 +6,7 @@ import {
   type SiteContent,
   type ServiceContent,
   type PricingItem,
+  type SocialLink,
 } from "@/app/lib/content-source";
 
 export async function GET(req: Request) {
@@ -78,10 +79,27 @@ export async function POST(req: Request) {
         .filter((p) => p.title && p.price)
     : [];
 
+  // Соцсети — пустой массив = блок скрыт. Пускаем только http(s)-ссылки,
+  // чтобы случайный javascript:/data:-URL из админки не уехал в DOM.
+  const socials: SocialLink[] = Array.isArray(c.socials)
+    ? c.socials
+        .map((s) => ({
+          label: String(s?.label ?? "").slice(0, 40).trim(),
+          url: String(s?.url ?? "").slice(0, 500).trim(),
+        }))
+        .filter(
+          (s) =>
+            s.label &&
+            s.url &&
+            /^https?:\/\//i.test(s.url),
+        )
+    : [];
+
   const normalized: SiteContent = {
     hero: { bio: String(c.hero.bio).slice(0, 2000).trim() },
     services,
     pricing,
+    socials,
   };
 
   try {

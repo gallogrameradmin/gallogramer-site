@@ -6,6 +6,7 @@ import type {
   ServiceContent,
   ServiceMedia,
   SiteContent,
+  SocialLink,
 } from "@/app/lib/content-source";
 
 type MediaItem = {
@@ -102,6 +103,38 @@ export default function ContentEditor({
     const next = [...content.pricing];
     [next[i], next[j]] = [next[j], next[i]];
     setContent({ ...content, pricing: next });
+  };
+
+  const updateSocial = (i: number, patch: Partial<SocialLink>) => {
+    if (!content) return;
+    const next = [...content.socials];
+    next[i] = { ...next[i], ...patch };
+    setContent({ ...content, socials: next });
+  };
+
+  const addSocial = () => {
+    if (!content) return;
+    setContent({
+      ...content,
+      socials: [...content.socials, { label: "", url: "" }],
+    });
+  };
+
+  const removeSocial = (i: number) => {
+    if (!content) return;
+    setContent({
+      ...content,
+      socials: content.socials.filter((_, idx) => idx !== i),
+    });
+  };
+
+  const moveSocial = (i: number, delta: -1 | 1) => {
+    if (!content) return;
+    const j = i + delta;
+    if (j < 0 || j >= content.socials.length) return;
+    const next = [...content.socials];
+    [next[i], next[j]] = [next[j], next[i]];
+    setContent({ ...content, socials: next });
   };
 
   const save = async () => {
@@ -230,6 +263,45 @@ export default function ContentEditor({
             />
           ))}
         </div>
+      </section>
+
+      {/* Соцсети */}
+      <section>
+        <div className="flex items-baseline justify-between gap-3 mb-1">
+          <h2 className="font-display text-xl md:text-2xl">
+            Соцсети<span className="text-accent">.</span>
+          </h2>
+          <span className="text-[10px] font-mono tracking-[0.14em] uppercase text-fg-faint">
+            {content.socials.length} ссылок
+          </span>
+        </div>
+        <p className="text-[11px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-5">
+          Блок «Соцсети» в футере. URL должен начинаться с https:// (или
+          http://). Пустой список — блок скрыт. Порядок настраиваешь стрелками.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {content.socials.map((s, i) => (
+            <SocialForm
+              key={i}
+              index={i}
+              total={content.socials.length}
+              item={s}
+              onChange={(patch) => updateSocial(i, patch)}
+              onRemove={() => removeSocial(i)}
+              onMoveUp={() => moveSocial(i, -1)}
+              onMoveDown={() => moveSocial(i, 1)}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={addSocial}
+          className="mt-4 w-full glass rounded-xl py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-faint hover:text-accent transition-colors"
+        >
+          + Добавить соцсеть
+        </button>
       </section>
 
       {/* Кнопка Save */}
@@ -382,6 +454,91 @@ function ServiceForm({
             авто-превью, сгенерированное при загрузке видео.
           </p>
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SocialForm({
+  index,
+  total,
+  item,
+  onChange,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: {
+  index: number;
+  total: number;
+  item: SocialLink;
+  onChange: (patch: Partial<SocialLink>) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
+  const looksBad =
+    item.url.length > 0 && !/^https?:\/\//i.test(item.url);
+  return (
+    <div className="glass rounded-2xl p-4 md:p-5 flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-faint shrink-0">
+          /00{index + 1}
+        </span>
+        <input
+          type="text"
+          value={item.label}
+          onChange={(e) => onChange({ label: e.target.value })}
+          maxLength={40}
+          placeholder="Подпись (Telegram, Instagram, VK…)"
+          className="flex-1 bg-transparent text-base text-fg border-b border-line focus:border-accent focus:outline-none pb-1"
+        />
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={index === 0}
+            aria-label="Поднять"
+            className="text-fg-faint hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed w-7 h-7 flex items-center justify-center text-base"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+            aria-label="Опустить"
+            className="text-fg-faint hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed w-7 h-7 flex items-center justify-center text-base"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Удалить"
+            className="text-fg-faint hover:text-red-500 w-7 h-7 flex items-center justify-center text-sm transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <input
+        type="url"
+        value={item.url}
+        onChange={(e) => onChange({ url: e.target.value })}
+        maxLength={500}
+        placeholder="https://t.me/gallogramer"
+        className={`bg-bg-soft text-fg font-mono text-sm p-3 rounded-xl border focus:outline-none transition-colors ${
+          looksBad
+            ? "border-red-500/60 focus:border-red-500"
+            : "border-line focus:border-accent"
+        }`}
+      />
+      {looksBad ? (
+        <p className="text-[10px] font-mono text-red-400">
+          URL должен начинаться с https:// (или http://) — иначе при сохранении
+          ссылка будет отброшена.
+        </p>
       ) : null}
     </div>
   );

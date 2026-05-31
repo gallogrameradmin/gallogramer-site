@@ -22,7 +22,7 @@ export default async function Home() {
       <Services photos={photos} services={content.services} />
       <Featured photos={photos} />
       <Pricing pricing={content.pricing} />
-      <Footer />
+      <Footer socials={content.socials} />
     </main>
   );
 }

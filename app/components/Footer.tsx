@@ -5,10 +5,11 @@ import { FillLink } from "./FillButton";
 import ButtonAura from "./ButtonAura";
 import DecorField from "./DecorField";
 import EdgeMarks from "./EdgeMarks";
+import type { SocialLink } from "@/app/lib/content-source";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export default function Footer() {
+export default function Footer({ socials = [] }: { socials?: SocialLink[] }) {
   return (
     <footer
       id="contact"
@@ -16,7 +17,7 @@ export default function Footer() {
     >
       {/* Декоративный фон */}
       <DecorField count={18} maxOpacity={0.15} />
-      <EdgeMarks code="004 / C" label="CONTACT" />
+      <EdgeMarks code="005 / D" label="CONTACT" />
 
       <div className="relative max-w-[1400px] mx-auto">
         <motion.div
@@ -28,10 +29,10 @@ export default function Footer() {
         >
           <div className="lg:col-span-6">
             <p className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-6 inline-flex items-center gap-2">
-              <span className="text-accent">004</span>
+              <span className="text-accent">005</span>
               <span aria-hidden className="inline-block">
-                <svg width="8" height="8" viewBox="0 0 10 10">
-                  <rect x="1.2" y="1.2" width="7.6" height="7.6" className="fill-accent" />
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                  <polygon points="5,0.6 9.4,5 5,9.4 0.6,5" className="fill-accent" />
                 </svg>
               </span>
               <span>/ Contact</span>
@@ -63,24 +64,31 @@ export default function Footer() {
               </span>
             </FillLink>
 
-            <div className="pt-5 mt-2 border-t border-line">
-              <p className="text-[10px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-3">
-                Соцсети
-              </p>
-              <a
-                href="https://pin.it/4ClxnGxw5"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-[0.14em] text-fg hover:text-accent transition-colors"
-              >
-                <span
-                  aria-hidden
-                  className="inline-block h-[6px] w-[6px] rounded-full bg-accent"
-                />
-                Pinterest
-                <span aria-hidden>↗</span>
-              </a>
-            </div>
+            {socials.length > 0 ? (
+              <div className="pt-5 mt-2 border-t border-line">
+                <p className="text-[10px] tracking-[0.18em] uppercase font-mono text-fg-faint mb-3">
+                  Соцсети
+                </p>
+                <div className="flex flex-col gap-2">
+                  {socials.map((s) => (
+                    <a
+                      key={`${s.label}-${s.url}`}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-[0.14em] text-fg hover:text-accent transition-colors w-fit"
+                    >
+                      <span
+                        aria-hidden
+                        className="inline-block h-[6px] w-[6px] rounded-full bg-accent"
+                      />
+                      {s.label}
+                      <span aria-hidden>↗</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </motion.div>
 
@@ -99,7 +107,7 @@ export default function Footer() {
           </div>
           <div>
             <div className="text-fg-faint/60 mb-1">[ build ]</div>
-            <div className="text-fg">v0.1</div>
+            <div className="text-fg">v10.12</div>
           </div>
         </div>
       </div>

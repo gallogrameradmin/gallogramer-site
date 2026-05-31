@@ -42,12 +42,20 @@ export type PricingItem = {
   highlight: boolean;
 };
 
+export type SocialLink = {
+  /** Подпись — «Telegram», «Instagram», «VK», «Pinterest»… */
+  label: string;
+  /** Полный URL — https://t.me/..., https://instagram.com/... и т.д. */
+  url: string;
+};
+
 export type SiteContent = {
   hero: {
     bio: string;
   };
   services: ServiceContent[];
   pricing: PricingItem[];
+  socials: SocialLink[];
 };
 
 /**
@@ -149,6 +157,12 @@ export const DEFAULT_CONTENT: SiteContent = {
       highlight: false,
     },
   ],
+  // Соцсети в футере — пустой массив скрывает блок «Соцсети». Дефолтно
+  // оставляем Pinterest (как было захардкожено раньше) — это поведение
+  // совместимое со старым контентом.
+  socials: [
+    { label: "Pinterest", url: "https://pin.it/4ClxnGxw5" },
+  ],
 };
 
 /**
@@ -178,10 +192,14 @@ export async function getContent(): Promise<SiteContent> {
     // Пустой массив [] оставляем как есть: пользователь явно скрыл блок.
     const pricing =
       Array.isArray(raw.pricing) ? raw.pricing : DEFAULT_CONTENT.pricing;
+    // Соцсети — та же логика: undefined → дефолт; [] → пользователь скрыл блок.
+    const socials =
+      Array.isArray(raw.socials) ? raw.socials : DEFAULT_CONTENT.socials;
     return {
       hero: { ...DEFAULT_CONTENT.hero, ...(raw.hero ?? {}) },
       services,
       pricing,
+      socials,
     };
   } catch (err) {
     console.error("[content-source] getContent failed:", err);
