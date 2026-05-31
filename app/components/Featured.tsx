@@ -45,7 +45,7 @@ export default function Featured({ photos }: { photos: Photo[] }) {
               </span>
               <span>/ Works</span>
             </p>
-            <h2 className="font-display font-medium tracking-[-0.03em] text-[clamp(2rem,5vw,4rem)] leading-[0.95]">
+            <h2 className="font-display font-medium tracking-[-0.04em] text-[clamp(3rem,8vw,7rem)] leading-[0.9]">
               Работы<span className="text-accent">.</span>
             </h2>
           </div>

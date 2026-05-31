@@ -20,8 +20,8 @@ export default async function Home() {
         speed={50}
       />
       <Services photos={photos} services={content.services} />
-      <Pricing pricing={content.pricing} />
       <Featured photos={photos} />
+      <Pricing pricing={content.pricing} />
       <Footer />
     </main>
   );

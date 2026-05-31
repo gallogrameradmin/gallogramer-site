@@ -5,11 +5,15 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 
-// Привязка секций главной к пунктам навигации
+// Привязка секций главной к пунктам навигации.
+// Порядок здесь = порядок прокрутки сверху вниз; нужен для scroll-spy edge-case
+// «докрутили до низа» — берётся последний ключ. Если меняешь порядок секций
+// в page.tsx, синхронизируй и тут.
 const SECTION_TO_LINK: Record<string, string> = {
   hero: "/",
   services: "/#services",
   works: "/portfolio",
+  pricing: "/#pricing",
   contact: "/request",
 };
 
@@ -17,6 +21,7 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/#services", label: "Услуги" },
   { href: "/portfolio", label: "Portfolio" },
+  { href: "/#pricing", label: "Прайс" },
   { href: "/request", label: "Заявка" },
 ];
 
@@ -137,7 +142,7 @@ export default function Header() {
               href={link.href}
               aria-current={isActive ? "page" : undefined}
               className={`relative tracking-[0.1em] sm:tracking-[0.18em] uppercase font-mono font-medium transition-colors group ${
-                isActive ? "text-accent" : "text-fg-muted hover:text-fg"
+                isActive ? "text-accent" : "text-fg-muted hover:text-accent"
               }`}
               style={{ fontSize: "var(--nav-size, 9px)" }}
             >
