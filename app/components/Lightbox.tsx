@@ -99,10 +99,17 @@ export default function Lightbox({
             →
           </button>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint">
-            {String((index ?? 0) + 1).padStart(3, "0")} /{" "}
-            {String(items.length).padStart(3, "0")}
-            {item.kind === "video" ? " · video" : ""}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-center px-4">
+            <div className="text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint">
+              {String((index ?? 0) + 1).padStart(3, "0")} /{" "}
+              {String(items.length).padStart(3, "0")}
+              {item.kind === "video" ? " · video" : ""}
+            </div>
+            {item.kind === "video" ? (
+              <div className="text-[9px] md:text-[10px] tracking-[0.12em] uppercase font-mono text-fg-faint/55">
+                Качество ролика оптимизировано для сайта
+              </div>
+            ) : null}
           </div>
 
           <motion.div
