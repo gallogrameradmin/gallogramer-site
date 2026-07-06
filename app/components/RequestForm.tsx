@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { FillSubmit } from "./FillButton";
@@ -30,6 +31,10 @@ export default function RequestForm() {
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // Согласие на обработку ПД — обязательно по ФЗ-152. Без галочки Submit
+  // не проходит; чекбокс жирно подсвечивается красным при попытке отправки.
+  const [consent, setConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
 
   // Префилл из ?service=<title> — пользователь кликнул карточку прайса.
   // Слайсим до 80 символов: даже если кто-то руками впишет монструозный
@@ -93,6 +98,17 @@ export default function RequestForm() {
       return;
     }
 
+    // Согласие на ПД — блок отдельно, чтобы подсветить именно чекбокс
+    if (!consent) {
+      setConsentError(true);
+      const el = form.querySelector(
+        '[name="consent"]',
+      ) as HTMLElement | null;
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     setFieldErrors({});
     setState("sending");
     setError("");
@@ -120,6 +136,8 @@ export default function RequestForm() {
       setState("ok");
       form.reset();
       setMethod("telegram");
+      setConsent(false);
+      setConsentError(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка");
       setState("error");
@@ -290,6 +308,46 @@ export default function RequestForm() {
             />
             {errorLabel(fieldErrors.message)}
           </label>
+
+          {/* Согласие на обработку ПД */}
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                name="consent"
+                checked={consent}
+                onChange={(e) => {
+                  setConsent(e.target.checked);
+                  if (e.target.checked) setConsentError(false);
+                }}
+                aria-invalid={consentError}
+                className={`mt-1 h-4 w-4 shrink-0 accent-accent ${
+                  consentError ? "outline outline-2 outline-red-500" : ""
+                }`}
+              />
+              <span
+                className={`text-sm leading-relaxed transition-colors ${
+                  consentError ? "text-red-500" : "text-fg-muted"
+                }`}
+              >
+                Я даю согласие на обработку моих персональных данных в
+                соответствии с{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="text-accent underline underline-offset-4 hover:no-underline"
+                >
+                  Политикой конфиденциальности
+                </Link>
+                .
+              </span>
+            </label>
+            {consentError ? (
+              <span className="block text-[10px] font-mono uppercase tracking-[0.12em] text-red-500 mt-2 pl-7">
+                Нужно согласие, чтобы отправить заявку
+              </span>
+            ) : null}
+          </div>
 
           {/* Honeypot */}
           <label

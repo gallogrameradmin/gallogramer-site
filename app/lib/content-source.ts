@@ -49,6 +49,22 @@ export type SocialLink = {
   url: string;
 };
 
+/**
+ * Юридические реквизиты оператора персональных данных — используются в
+ * /privacy и в футере. Пусть живут в контенте (а не в env), чтобы можно было
+ * править из админки без передеплоя.
+ */
+export type LegalInfo = {
+  /** Полное ФИО оператора-физлица */
+  ownerName: string;
+  /** ИНН (12 цифр для самозанятого, 10 для ИП) */
+  ownerInn: string;
+  /** Email для запросов на удаление/уточнение ПД */
+  ownerEmail: string;
+  /** Дата последней редакции политики (YYYY-MM-DD) */
+  privacyUpdatedAt: string;
+};
+
 export type SiteContent = {
   hero: {
     bio: string;
@@ -56,6 +72,7 @@ export type SiteContent = {
   services: ServiceContent[];
   pricing: PricingItem[];
   socials: SocialLink[];
+  legal: LegalInfo;
 };
 
 /**
@@ -163,6 +180,12 @@ export const DEFAULT_CONTENT: SiteContent = {
   socials: [
     { label: "Pinterest", url: "https://pin.it/4ClxnGxw5" },
   ],
+  legal: {
+    ownerName: "Бобринёв Вячеслав Антонович",
+    ownerInn: "773168007559",
+    ownerEmail: "admin@gallogramer.com",
+    privacyUpdatedAt: "2026-06-01",
+  },
 };
 
 /**
@@ -195,11 +218,14 @@ export async function getContent(): Promise<SiteContent> {
     // Соцсети — та же логика: undefined → дефолт; [] → пользователь скрыл блок.
     const socials =
       Array.isArray(raw.socials) ? raw.socials : DEFAULT_CONTENT.socials;
+    // Legal — мержим с дефолтом чтобы старый контент без legal не сломался.
+    const legal = { ...DEFAULT_CONTENT.legal, ...(raw.legal ?? {}) };
     return {
       hero: { ...DEFAULT_CONTENT.hero, ...(raw.hero ?? {}) },
       services,
       pricing,
       socials,
+      legal,
     };
   } catch (err) {
     console.error("[content-source] getContent failed:", err);

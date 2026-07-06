@@ -3,10 +3,12 @@ import { checkAuth } from "@/app/lib/admin-auth";
 import {
   getContent,
   putContent,
+  DEFAULT_CONTENT,
   type SiteContent,
   type ServiceContent,
   type PricingItem,
   type SocialLink,
+  type LegalInfo,
 } from "@/app/lib/content-source";
 
 export async function GET(req: Request) {
@@ -95,11 +97,36 @@ export async function POST(req: Request) {
         )
     : [];
 
+  // Юридические данные — если поля не пришли, берём предыдущее значение
+  // из дефолта (чтобы пустая политика не появилась случайно из-за старого
+  // клиента). Обрезаем длины и не даём html-инъекций в текст.
+  const rawLegal = (c.legal ?? {}) as Partial<LegalInfo>;
+  const legal: LegalInfo = {
+    ownerName:
+      String(rawLegal.ownerName ?? DEFAULT_CONTENT.legal.ownerName)
+        .slice(0, 120)
+        .trim(),
+    ownerInn:
+      String(rawLegal.ownerInn ?? DEFAULT_CONTENT.legal.ownerInn)
+        .slice(0, 20)
+        .replace(/\D/g, ""),
+    ownerEmail:
+      String(rawLegal.ownerEmail ?? DEFAULT_CONTENT.legal.ownerEmail)
+        .slice(0, 120)
+        .trim()
+        .toLowerCase(),
+    privacyUpdatedAt:
+      String(
+        rawLegal.privacyUpdatedAt ?? DEFAULT_CONTENT.legal.privacyUpdatedAt,
+      ).slice(0, 10),
+  };
+
   const normalized: SiteContent = {
     hero: { bio: String(c.hero.bio).slice(0, 2000).trim() },
     services,
     pricing,
     socials,
+    legal,
   };
 
   try {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { FillLink } from "./FillButton";
 import ButtonAura from "./ButtonAura";
@@ -109,6 +110,15 @@ export default function Footer({ socials = [] }: { socials?: SocialLink[] }) {
             <div className="text-fg-faint/60 mb-1">[ build ]</div>
             <div className="text-fg">v10.12</div>
           </div>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-line/60 flex flex-wrap gap-x-6 gap-y-2 text-[10px] tracking-[0.14em] uppercase font-mono text-fg-faint">
+          <Link
+            href="/privacy"
+            className="hover:text-accent transition-colors"
+          >
+            Политика конфиденциальности
+          </Link>
         </div>
       </div>
     </footer>

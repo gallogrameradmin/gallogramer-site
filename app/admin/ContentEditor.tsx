@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type {
+  LegalInfo,
   PricingItem,
   ServiceContent,
   ServiceMedia,
@@ -135,6 +136,11 @@ export default function ContentEditor({
     const next = [...content.socials];
     [next[i], next[j]] = [next[j], next[i]];
     setContent({ ...content, socials: next });
+  };
+
+  const updateLegal = (patch: Partial<LegalInfo>) => {
+    if (!content) return;
+    setContent({ ...content, legal: { ...content.legal, ...patch } });
   };
 
   const save = async () => {
@@ -302,6 +308,90 @@ export default function ContentEditor({
         >
           + Добавить соцсеть
         </button>
+      </section>
+
+      {/* Юридические данные */}
+      <section>
+        <h2 className="font-display text-xl md:text-2xl mb-1">
+          Юр. данные<span className="text-accent">.</span>
+        </h2>
+        <p className="text-[11px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-5">
+          Эти поля используются на странице{" "}
+          <a
+            href="/privacy"
+            target="_blank"
+            className="underline hover:text-accent"
+          >
+            Политики конфиденциальности
+          </a>
+          . Меняешь ФИО/ИНН/email — политика тут же обновляется, без деплоя.
+        </p>
+
+        <div className="glass rounded-2xl p-5 md:p-6 flex flex-col gap-4">
+          <div>
+            <label className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-2 block">
+              ФИО оператора (как в паспорте)
+            </label>
+            <input
+              type="text"
+              value={content.legal.ownerName}
+              onChange={(e) => updateLegal({ ownerName: e.target.value })}
+              maxLength={120}
+              placeholder="Бобринёв Вячеслав Антонович"
+              className="w-full bg-bg-soft text-fg text-base p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-2 block">
+                ИНН (12 цифр — самозанятый)
+              </label>
+              <input
+                type="text"
+                value={content.legal.ownerInn}
+                onChange={(e) =>
+                  updateLegal({
+                    ownerInn: e.target.value.replace(/\D/g, "").slice(0, 20),
+                  })
+                }
+                placeholder="773168007559"
+                className="w-full bg-bg-soft text-fg font-mono text-base p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-2 block">
+                Email для юр. запросов
+              </label>
+              <input
+                type="email"
+                value={content.legal.ownerEmail}
+                onChange={(e) => updateLegal({ ownerEmail: e.target.value })}
+                maxLength={120}
+                placeholder="admin@gallogramer.com"
+                className="w-full bg-bg-soft text-fg font-mono text-sm p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-faint mb-2 block">
+              Дата редакции политики
+            </label>
+            <input
+              type="date"
+              value={content.legal.privacyUpdatedAt}
+              onChange={(e) =>
+                updateLegal({ privacyUpdatedAt: e.target.value })
+              }
+              className="bg-bg-soft text-fg font-mono text-sm p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
+            />
+            <p className="text-[10px] font-mono text-fg-faint mt-1">
+              Меняй когда правишь текст политики — юзерам показывается «редакция
+              от такого-то числа».
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* Кнопка Save */}
