@@ -184,7 +184,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     ownerName: "Бобринёв Вячеслав Антонович",
     ownerInn: "773168007559",
     ownerEmail: "admin@gallogramer.com",
-    privacyUpdatedAt: "2026-06-02",
+    privacyUpdatedAt: "2026-06-03",
   },
 };
 
