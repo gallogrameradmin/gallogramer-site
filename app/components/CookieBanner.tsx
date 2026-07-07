@@ -8,23 +8,33 @@ export const CONSENT_ACCEPT = "accept";
 export const CONSENT_REJECT = "reject";
 
 /**
- * Ненавязчивый баннер снизу справа. Показывается пока пользователь не
- * принял и не отклонил cookie. При клике сохраняет выбор в localStorage
- * и эмитит событие «cookie-consent-changed» — YandexMetrika его слушает
- * и стартует сразу без перезагрузки.
+ * Баннер согласия на cookie/Метрику.
+ *
+ * Показывается ГАРАНТИРОВАННО при первом заходе. Ключевое отличие от
+ * прошлой версии — initial state = true. Раньше initial=false + useEffect
+ * ставил true, если consent не найден. Проблема была в том, что на быстрой
+ * навигации/медленной гидрации пользователь мог кликнуть до срабатывания
+ * эффекта — и баннер визуально «пропускал» первый заход. Теперь баннер
+ * рендерится сразу в HTML, а useEffect только СКРЫВАЕТ его если consent
+ * уже сохранён в localStorage (то есть на повторных визитах).
+ *
+ * Позиция — фиксированный центр по горизонтали, низ по вертикали, на всех
+ * ширинах экрана. Ширина 92vw, но не больше 480px.
  */
 export default function CookieBanner() {
-  const [visible, setVisible] = useState(false);
+  // ВНИМАНИЕ: initial=true — критично для гарантии показа при первом входе.
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CONSENT_KEY);
-      // Показываем только если пользователь ещё не сделал выбор
-      if (stored !== CONSENT_ACCEPT && stored !== CONSENT_REJECT) {
-        setVisible(true);
+      if (stored === CONSENT_ACCEPT || stored === CONSENT_REJECT) {
+        setVisible(false);
       }
     } catch {
-      /* localStorage может быть недоступен в приватном режиме — молчим */
+      /* localStorage недоступен (приватный режим, отключён) —
+         оставляем баннер, кнопки Принять/Отклонить всё равно отработают
+         без сохранения, Метрика не запустится (что и логично). */
     }
   }, []);
 
@@ -44,7 +54,7 @@ export default function CookieBanner() {
     <div
       role="dialog"
       aria-label="Согласие на использование аналитики"
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:max-w-sm z-[70] glass rounded-2xl p-4 md:p-5 backdrop-blur-md shadow-lg"
+      className="!fixed bottom-4 left-1/2 -translate-x-1/2 w-[92vw] max-w-[480px] z-[70] glass rounded-2xl p-4 md:p-5 backdrop-blur-md shadow-lg"
     >
       <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-faint mb-2">
         <span className="text-accent">/</span> Cookie
