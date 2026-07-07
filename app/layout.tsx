@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "./components/Header";
 import FilmGrain from "./components/FilmGrain";
 import AmbientLine from "./components/AmbientLine";
+import CookieBanner from "./components/CookieBanner";
+import YandexMetrika from "./components/YandexMetrika";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -59,6 +61,8 @@ export default function RootLayout({
         <FilmGrain />
         <Header />
         {children}
+        <CookieBanner />
+        <YandexMetrika />
       </body>
     </html>
   );
