@@ -495,6 +495,12 @@ function ServiceForm({
                 className="mt-2 w-full h-32 object-cover rounded-lg bg-bg-soft"
               />
             )
+          ) : service.media?.kind === "none" ? (
+            <div className="mt-2 w-full h-32 rounded-lg bg-bg-soft border border-dashed border-line flex items-center justify-center">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-faint">
+                превью скрыто
+              </p>
+            </div>
           ) : (
             <p className="mt-2 text-[10px] font-mono text-fg-faint">
               Не выбрано — сайт возьмёт случайное фото из портфолио
@@ -783,12 +789,23 @@ function MediaPicker({
   const photos = media.filter((m) => m.kind === "photo");
   const videos = media.filter((m) => m.kind === "video");
 
-  // Селектная value: пустая = авто, иначе "kind:::url"
-  const currentValue = value ? `${value.kind}:::${value.src}` : "";
+  // Три служебных значения без разделителя:
+  //   ""      — авто (media = null)
+  //   "none"  — явно скрыть превью (media = { kind:"none", src:"" })
+  // Всё что содержит ":::" — конкретное фото/видео.
+  const currentValue = !value
+    ? ""
+    : value.kind === "none"
+      ? "none"
+      : `${value.kind}:::${value.src}`;
 
   const handle = (raw: string) => {
     if (!raw) {
       onChange(null);
+      return;
+    }
+    if (raw === "none") {
+      onChange({ kind: "none", src: "" });
       return;
     }
     const [kind, src] = raw.split(":::");
@@ -804,6 +821,7 @@ function MediaPicker({
       className="w-full bg-bg-soft text-fg text-sm font-mono p-3 rounded-xl border border-line focus:border-accent focus:outline-none transition-colors"
     >
       <option value="">— Авто (случайное фото из портфолио) —</option>
+      <option value="none">— Без изображения (скрыть превью) —</option>
 
       {photos.length > 0 ? (
         <optgroup label="📷 Фото">

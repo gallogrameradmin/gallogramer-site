@@ -46,13 +46,18 @@ export async function POST(req: Request) {
     let media: ServiceContent["media"] = null;
     if (s.media && typeof s.media === "object") {
       const k = s.media.kind;
-      const src = String(s.media.src ?? "").slice(0, 500);
-      if ((k === "photo" || k === "video") && src) {
-        media = { kind: k, src };
-        // poster только для видео
-        if (k === "video" && typeof s.media.poster === "string") {
-          const poster = s.media.poster.slice(0, 500).trim();
-          if (poster) media.poster = poster;
+      if (k === "none") {
+        // Явное «скрыть превью» — src игнорируем
+        media = { kind: "none", src: "" };
+      } else {
+        const src = String(s.media.src ?? "").slice(0, 500);
+        if ((k === "photo" || k === "video") && src) {
+          media = { kind: k, src };
+          // poster только для видео
+          if (k === "video" && typeof s.media.poster === "string") {
+            const poster = s.media.poster.slice(0, 500).trim();
+            if (poster) media.poster = poster;
+          }
         }
       }
     } else if (s.photoSrc) {

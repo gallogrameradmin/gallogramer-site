@@ -24,11 +24,14 @@ export default function Services({
   // Иначе берём случайное фото из портфолио, чтобы карточка не пустовала.
   type Preview =
     | { kind: "photo"; src: string; w: number; h: number }
-    | { kind: "video"; src: string; poster?: string };
+    | { kind: "video"; src: string; poster?: string }
+    | { kind: "none" };
 
   const currentPreview: Preview | null = (() => {
     if (!currentService) return null;
     const m = currentService.media;
+    // Явное «скрыть превью» — возвращаем маркер, ветка выше fallback на авто.
+    if (m?.kind === "none") return { kind: "none" };
     if (m?.kind === "video" && m.src) {
       return { kind: "video", src: m.src, poster: m.poster };
     }
@@ -89,45 +92,55 @@ export default function Services({
                   transition={{ duration: 0.8, ease }}
                   className="group relative"
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden bg-bg-soft">
-                    {currentPreview?.kind === "photo" ? (
-                      <Image
-                        src={currentPreview.src}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1024px) 22vw, (min-width: 768px) 33vw, 100vw"
-                        className="object-cover"
+                  {currentPreview?.kind === "none" ? null : (
+                    <div className="relative aspect-[3/4] overflow-hidden bg-bg-soft">
+                      {currentPreview?.kind === "photo" ? (
+                        <Image
+                          src={currentPreview.src}
+                          alt=""
+                          fill
+                          sizes="(min-width: 1024px) 22vw, (min-width: 768px) 33vw, 100vw"
+                          className="object-cover"
+                        />
+                      ) : currentPreview?.kind === "video" ? (
+                        <video
+                          key={currentPreview.src}
+                          src={currentPreview.src}
+                          poster={currentPreview.poster || undefined}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 ring-1 ring-inset ring-fg/[0.08] pointer-events-none" />
+                      {currentPreview?.kind === "video" ? (
+                        <div className="absolute top-2 right-2 text-[9px] font-mono tracking-[0.18em] uppercase bg-accent text-white px-2 py-1 pointer-events-none">
+                          video
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                  {services[active].caseTitle ? (
+                    <p
+                      className={`text-base text-fg font-display tracking-[-0.01em] ${
+                        currentPreview?.kind === "none" ? "" : "mt-4"
+                      }`}
+                    >
+                      «{services[active].caseTitle}»
+                    </p>
+                  ) : null}
+                  {currentPreview?.kind === "none" ? null : (
+                    <p className="mt-1 text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="inline-block h-[6px] w-[6px] rounded-full bg-accent"
                       />
-                    ) : currentPreview?.kind === "video" ? (
-                      <video
-                        key={currentPreview.src}
-                        src={currentPreview.src}
-                        poster={currentPreview.poster || undefined}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    ) : null}
-                    <div className="absolute inset-0 ring-1 ring-inset ring-fg/[0.08] pointer-events-none" />
-                    {currentPreview?.kind === "video" ? (
-                      <div className="absolute top-2 right-2 text-[9px] font-mono tracking-[0.18em] uppercase bg-accent text-white px-2 py-1 pointer-events-none">
-                        video
-                      </div>
-                    ) : null}
-                  </div>
-                  <p className="mt-4 text-base text-fg font-display tracking-[-0.01em]">
-                    «{services[active].caseTitle}»
-                  </p>
-                  <p className="mt-1 text-[11px] tracking-[0.18em] uppercase font-mono text-fg-faint flex items-center gap-2">
-                    <span
-                      aria-hidden
-                      className="inline-block h-[6px] w-[6px] rounded-full bg-accent"
-                    />
-                    из портфолио
-                  </p>
+                      из портфолио
+                    </p>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
