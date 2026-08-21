@@ -108,7 +108,7 @@ export default function Footer({ socials = [] }: { socials?: SocialLink[] }) {
           </div>
           <div>
             <div className="text-fg-faint/60 mb-1">[ build ]</div>
-            <div className="text-fg">v10.12</div>
+            <div className="text-fg">v0.28</div>
           </div>
         </div>
 
